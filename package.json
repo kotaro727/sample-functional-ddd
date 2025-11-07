@@ -1,0 +1,33 @@
+{
+  "name": "sample-functional-ddd",
+  "version": "1.0.0",
+  "description": "関数型プログラミングとDDDを組み合わせた受発注システムのサンプル",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "ddd",
+    "functional-programming",
+    "hexagonal-architecture",
+    "typescript",
+    "react"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/react": "^18.2.47",
+    "@types/react-dom": "^18.2.18",
+    "@vitejs/plugin-react": "^5.1.0",
+    "typescript": "^5.3.3",
+    "vite": "^7.2.2"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  }
+}
