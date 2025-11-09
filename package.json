@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:api": "bun run --watch src/index.ts",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "test": "bun test",
@@ -20,6 +21,7 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
+    "@types/cors": "^2.8.19",
     "@types/express": "^5.0.5",
     "@types/react": "^18.2.47",
     "@types/react-dom": "^18.2.18",
@@ -30,6 +32,7 @@
     "vite": "^7.2.2"
   },
   "dependencies": {
+    "cors": "^2.8.5",
     "express": "^5.1.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"

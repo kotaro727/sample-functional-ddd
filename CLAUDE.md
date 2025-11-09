@@ -128,9 +128,18 @@ bun install
 ```
 
 ### 開発サーバー起動
+
+**APIサーバー（バックエンド）**
 ```bash
-bun run dev
+bun run dev:api  # ポート4000で起動
 ```
+
+**フロントエンド（React）**
+```bash
+bun run dev  # ポート3000で起動
+```
+
+**並行起動**: APIとフロントエンドを同時に開発する場合は、2つのターミナルで別々に起動
 
 ### テスト実行
 ```bash
@@ -140,6 +149,11 @@ bun test
 ### ビルド
 ```bash
 bun run build
+```
+
+### 型チェック
+```bash
+bun run typecheck
 ```
 
 ## 実装ガイドライン

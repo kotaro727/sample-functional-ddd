@@ -162,10 +162,31 @@ Infrastructure (Ports実装)
 ```bash
 # 依存関係のインストール
 bun install
+```
 
-# 開発サーバーの起動（ポート3000）
+## 開発サーバーの起動
+
+### APIサーバー（バックエンド）
+```bash
+# APIサーバー起動（ポート4000）
+bun run dev:api
+```
+
+APIサーバーが起動したら以下にアクセスできます：
+- 商品一覧API: http://localhost:4000/api/products
+
+### フロントエンド（React）
+```bash
+# フロントエンド開発サーバー起動（ポート3000）
 bun run dev
+```
 
+### 並行起動
+APIとフロントエンドを同時に開発する場合は、2つのターミナルで別々に起動してください。
+
+## その他のコマンド
+
+```bash
 # ビルド
 bun run build
 
