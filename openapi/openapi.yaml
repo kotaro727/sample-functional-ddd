@@ -55,6 +55,52 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /api/products/{id}:
+    get:
+      summary: 商品詳細を取得
+      description: 指定されたIDの商品詳細を取得します
+      operationId: getProductById
+      tags:
+        - products
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 商品ID
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+          example: 1
+      responses:
+        '200':
+          description: 商品詳細の取得に成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductDto'
+              example:
+                id: 1
+                title: iPhone 15
+                price: 999.99
+                description: 最新のiPhone
+        '404':
+          description: 商品が見つからない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error:
+                  type: NOT_FOUND
+                  message: 商品が見つかりません
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
 components:
   schemas:
     ProductDto:
