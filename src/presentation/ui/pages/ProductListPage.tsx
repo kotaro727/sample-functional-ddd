@@ -54,12 +54,23 @@ export const ProductListPage = () => {
   return (
     <div>
       <h1>商品一覧</h1>
-      <ul>
+      <ul style={{ listStyle: 'none', padding: 0 }}>
         {products.map((product) => (
-          <li key={product.id}>
-            <h2>{product.title}</h2>
-            <p>価格: ${product.price}</p>
-            {product.description && <p>{product.description}</p>}
+          <li
+            key={product.id}
+            style={{
+              border: '1px solid #ddd',
+              borderRadius: '8px',
+              padding: '1rem',
+              marginBottom: '1rem',
+              backgroundColor: '#fff'
+            }}
+          >
+            <h2 style={{ margin: '0 0 0.5rem 0' }}>{product.title}</h2>
+            <p style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#2c5aa0', margin: '0.5rem 0' }}>
+              価格: ${product.price}
+            </p>
+            {product.description && <p style={{ color: '#666', margin: '0.5rem 0 0 0' }}>{product.description}</p>}
           </li>
         ))}
       </ul>
