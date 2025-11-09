@@ -21,12 +21,15 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.5",
     "@types/react": "^18.2.47",
     "@types/react-dom": "^18.2.18",
     "@types/supertest": "^6.0.3",
     "@vitejs/plugin-react": "^5.1.0",
+    "happy-dom": "^20.0.10",
     "supertest": "^7.1.4",
     "typescript": "^5.3.3",
     "vite": "^7.2.2"
