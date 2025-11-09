@@ -199,6 +199,54 @@ describe('MyComponent', () => {
 });
 ```
 
+## React Routerの利用方針
+
+- **バージョン**: `react-router`/`react-router-dom`はv7系列（現在`^7.9.5`）を採用。Data Router API（`createBrowserRouter`/`RouterProvider`）を前提とし、React 18の同期待機サポートを活用する。
+- **役割**: Presentation層(UI)におけるページ遷移とデータ取得のオーケストレーション。Domain/Application層のロジックはサーバー側に留め、クライアントはDTOを受け取って表示に専念する。
+
+### ルーティング構成
+1. `src/presentation/ui/router.tsx`（未作成なら新規）で`createBrowserRouter`を用いたルート定義を集約する。
+2. ルートごとに`element`/`loader`/`action`/`errorElement`を並べ、`App.tsx`では`RouterProvider router={router}`のみを描画する。
+3. ページコンポーネントは`src/presentation/ui/pages`配下に置き、レイアウト共通処理は`components/layouts`などに分離する。
+
+```tsx
+// 例: src/presentation/ui/router.tsx
+import { createBrowserRouter } from 'react-router-dom';
+import { RootLayout } from './components/layouts/RootLayout';
+import { ProductListPage } from './pages/ProductListPage';
+import { productListLoader } from './routes/productLoaders';
+
+export const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <RootLayout />,
+    errorElement: <RouterErrorBoundary />,
+    children: [
+      {
+        index: true,
+        loader: productListLoader,
+        element: <ProductListPage />,
+      },
+    ],
+  },
+]);
+```
+
+### Data API（Loader/Action/Fetcher）
+- **Loader**: API呼び出しとDTO整形を集約し、コンポーネント本体は`useLoaderData`で結果を受ける。`defer`を使う場合もトップレベルで結果型を定義し再利用する。
+- **Action**: フォーム送信など書き込み系副作用を集約し、HTTPレスポンスの`type`/`message`をUIで解釈する。成功時は`redirect()`で遷移させる。
+- **型付け**: `type ProductListLoaderData = Awaited<ReturnType<typeof productListLoader>>;`のようにローダー返却型を再利用し、`useLoaderData<ProductListLoaderData>()`で型安全に扱う。
+
+### エラーハンドリングと遷移
+- 各ルートに`errorElement`を設定し、`useRouteError()`でOpenAPIバリデーションエラーやネットワークエラーを表示分岐する。
+- 404/ドメインエラーはサーバーが返す`{ error: { type, message } }`をそのままUIへ表示するか、i18nマッピングを通す。
+- リダイレクトはLoader/Actionから`redirect('/path')`を返し、副作用の一元化を維持する。
+
+### テスト
+- ルーター付きテストは`createMemoryRouter`で本番と同じルート定義を読み込み、`RouterProvider`を`render`する。
+- Loader/Actionは純粋関数なので`happy-dom`の`fetch`スタブや`msw`を使いながらユニットテスト可能。
+- ページ単体テストでは必要な子ルートだけを含むメモリルーターを生成し、遷移・エラー表示を検証する。
+
 ## 開発コマンド
 
 ### セットアップ
