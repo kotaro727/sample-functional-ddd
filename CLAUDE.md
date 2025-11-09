@@ -118,7 +118,86 @@ Infrastructure (Portsを実装)
 
 ### テストファイルの配置
 - テストファイルは実装ファイルと同じディレクトリに配置
-- ファイル名: `{name}.test.ts`
+- ファイル名: `{name}.test.ts` または `{name}.test.tsx`（Reactコンポーネント）
+
+### React Testing Library の使い方
+
+**基本的な考え方:**
+ユーザーがアプリケーションを使う方法に近い形でテストを書く
+
+**主要なAPI:**
+
+1. **render()** - コンポーネントをレンダリング
+```tsx
+import { render } from '@testing-library/react';
+render(<MyComponent />);
+```
+
+2. **screen** - レンダリングされた要素にアクセス
+```tsx
+import { screen } from '@testing-library/react';
+
+// テキストで要素を取得
+screen.getByText('ボタン');           // 見つからない場合はエラー
+screen.queryByText('ボタン');         // 見つからない場合はnull
+screen.findByText('ボタン');          // 非同期、見つかるまで待つ
+
+// 正規表現も使用可能
+screen.getByText(/読み込み中/);
+
+// ロール（role）で取得（推奨）
+screen.getByRole('button', { name: '送信' });
+```
+
+3. **waitFor()** - 非同期処理を待つ
+```tsx
+import { waitFor } from '@testing-library/react';
+
+await waitFor(() => {
+  expect(screen.getByText('完了')).toBeDefined();
+});
+```
+
+4. **fetch のモック**
+```tsx
+globalThis.fetch = async (url) => {
+  return new Response(
+    JSON.stringify({ data: 'test' }),
+    { status: 200, headers: { 'Content-Type': 'application/json' } }
+  );
+};
+```
+
+**クエリの優先順位（推奨順）:**
+1. `getByRole` - アクセシビリティを意識したクエリ
+2. `getByLabelText` - フォーム要素用
+3. `getByText` - 表示されるテキストコンテンツ
+4. `getByTestId` - 最後の手段（data-testid属性を使用）
+
+**バリアント:**
+- `getBy*` - 要素が見つからない場合はエラー
+- `queryBy*` - 要素が見つからない場合はnull
+- `findBy*` - 非同期、要素が見つかるまで待つ
+
+**テストの例:**
+```tsx
+import { describe, test, expect } from 'bun:test';
+import { render, screen, waitFor } from '@testing-library/react';
+
+describe('MyComponent', () => {
+  test('ボタンをクリックするとテキストが変わる', async () => {
+    render(<MyComponent />);
+
+    // 初期状態を確認
+    expect(screen.getByText('Hello')).toBeDefined();
+
+    // 非同期でデータが表示されるのを待つ
+    await waitFor(() => {
+      expect(screen.getByText('Loaded')).toBeDefined();
+    });
+  });
+});
+```
 
 ## 開発コマンド
 
