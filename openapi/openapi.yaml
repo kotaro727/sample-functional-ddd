@@ -1,0 +1,108 @@
+openapi: 3.0.3
+info:
+  title: Sample Functional DDD API
+  description: 関数型プログラミングとDDDを組み合わせた受発注システムのAPI
+  version: 1.0.0
+  contact:
+    name: API Support
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:4000
+    description: 開発環境
+
+tags:
+  - name: products
+    description: 商品関連のAPI
+
+paths:
+  /api/products:
+    get:
+      summary: 商品一覧を取得
+      description: 全ての商品の一覧を取得します
+      operationId: getProducts
+      tags:
+        - products
+      responses:
+        '200':
+          description: 商品一覧の取得に成功
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - products
+                properties:
+                  products:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ProductDto'
+              example:
+                products:
+                  - id: 1
+                    title: iPhone 15
+                    price: 999.99
+                    description: 最新のiPhone
+                  - id: 2
+                    title: MacBook Pro
+                    price: 2499.99
+                    description: 高性能ノートPC
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    ProductDto:
+      type: object
+      required:
+        - id
+        - title
+        - price
+      properties:
+        id:
+          type: integer
+          format: int32
+          minimum: 1
+          description: 商品ID（正の整数）
+          example: 1
+        title:
+          type: string
+          minLength: 1
+          description: 商品名
+          example: iPhone 15
+        price:
+          type: number
+          format: double
+          minimum: 0
+          description: 価格（0以上）
+          example: 999.99
+        description:
+          type: string
+          nullable: true
+          description: 商品説明（任意）
+          example: 最新のiPhone
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          required:
+            - type
+            - message
+          properties:
+            type:
+              type: string
+              description: エラータイプ
+              example: REPOSITORY_ERROR
+            message:
+              type: string
+              description: エラーメッセージ
+              example: データの取得に失敗しました

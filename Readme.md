@@ -174,6 +174,7 @@ bun run dev:api
 
 APIサーバーが起動したら以下にアクセスできます：
 - 商品一覧API: http://localhost:4000/api/products
+- API ドキュメント（Swagger UI）: http://localhost:4000/api-docs
 
 ### フロントエンド（React）
 ```bash
@@ -183,6 +184,29 @@ bun run dev
 
 ### 並行起動
 APIとフロントエンドを同時に開発する場合は、2つのターミナルで別々に起動してください。
+
+## OpenAPI / 契約駆動開発
+
+このプロジェクトではOpenAPIを使用した契約駆動開発を採用しています。
+
+### OpenAPI関連コマンド
+
+```bash
+# OpenAPIスキーマからTypeScript型を生成
+bun run openapi:generate
+
+# スキーマファイルの変更を監視して自動生成
+bun run openapi:watch
+```
+
+詳細は [契約駆動開発ガイド](docs/CONTRACT_DRIVEN_DEVELOPMENT.md) を参照してください。
+
+### 開発の流れ
+
+1. `openapi/openapi.yaml` でAPI仕様を定義（契約作成）
+2. `bun run openapi:generate` で型定義を自動生成
+3. 生成された型を使ってTDDで実装
+4. Swagger UI (`http://localhost:4000/api-docs`) でドキュメント確認
 
 ## その他のコマンド
 
@@ -199,3 +223,9 @@ bun test
 # 型チェック
 bun run typecheck
 ```
+
+## ドキュメント
+
+- [CLAUDE.md](CLAUDE.md) - Claude Code用の開発ガイド
+- [契約駆動開発ガイド](docs/CONTRACT_DRIVEN_DEVELOPMENT.md) - OpenAPIを使った開発手法
+- [React Testing Libraryガイド](docs/REACT_TESTING_LIBRARY.md) - コンポーネントテストの書き方

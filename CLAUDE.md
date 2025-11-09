@@ -235,6 +235,64 @@ bun run build
 bun run typecheck
 ```
 
+### OpenAPI型生成
+```bash
+# OpenAPIスキーマからTypeScript型を生成
+bun run openapi:generate
+
+# スキーマファイルの変更を監視して自動生成
+bun run openapi:watch
+```
+
+## 契約駆動開発（OpenAPI）
+
+このプロジェクトでは、OpenAPIを使用した契約駆動開発を採用しています。
+
+### 基本的な流れ
+
+1. **契約を定義**: `openapi/openapi.yaml` でAPIの仕様を定義
+2. **型を生成**: `bun run openapi:generate` でTypeScript型を自動生成
+3. **TDDで実装**: 生成された型を使ってテスト駆動で実装
+4. **ドキュメント確認**: Swagger UI (`http://localhost:4000/api-docs`) で確認
+
+### OpenAPIスキーマの定義
+
+新しいAPIエンドポイントを追加する場合:
+
+1. `openapi/openapi.yaml` にエンドポイントを追加
+2. リクエスト/レスポンスのスキーマを定義
+3. 型定義を再生成: `bun run openapi:generate`
+4. `src/generated/api-schema.ts` に型が生成される
+
+### 生成された型の使用
+
+```typescript
+import type { components } from '@generated/api-schema';
+
+// スキーマから型を取得
+export type ProductDto = components['schemas']['ProductDto'];
+
+// レスポンス型の取得
+export type GetProductsResponse = operations['getProducts']['responses']['200']['content']['application/json'];
+```
+
+### バリデーション
+
+express-openapi-validatorが自動的に以下を検証:
+- リクエストパラメータ
+- リクエストボディ
+- レスポンスボディ
+
+スキーマと一致しないリクエスト/レスポンスはエラーになります。
+
+### APIドキュメント
+
+APIサーバー起動後、以下にアクセス:
+- Swagger UI: `http://localhost:4000/api-docs`
+- 商品一覧API: `http://localhost:4000/api/products`
+
+詳細は [契約駆動開発ガイド](docs/CONTRACT_DRIVEN_DEVELOPMENT.md) を参照。
+
 ## 実装ガイドライン
 
 ### 新しい集約の作成

@@ -36,3 +36,6 @@ coverage/
 .cache/
 .parcel-cache/
 .vite/
+
+# 自動生成されたファイル
+src/generated/
