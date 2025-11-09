@@ -2,7 +2,7 @@ import { describe, test, expect, beforeEach, beforeAll, afterAll } from 'bun:tes
 import { render, waitFor, fireEvent } from '@testing-library/react';
 import { Window } from 'happy-dom';
 import { ProductDetailPage } from './ProductDetailPage';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { MemoryRouter, Routes, Route } from 'react-router-dom';
 
 // happy-dom のセットアップ
 const window = new Window();
@@ -35,11 +35,11 @@ beforeEach(() => {
 // テスト用のラッパーコンポーネント（ルーター付き）
 const renderWithRouter = (productId: string) => {
   return render(
-    <BrowserRouter>
+    <MemoryRouter initialEntries={[`/products/${productId}`]}>
       <Routes>
         <Route path="/products/:id" element={<ProductDetailPage />} />
       </Routes>
-    </BrowserRouter>
+    </MemoryRouter>
   );
 };
 
@@ -64,9 +64,6 @@ describe('ProductDetailPage', () => {
       return new Response('Not Found', { status: 404 });
     };
 
-    // ルーターの履歴を /products/1 に設定
-    window.history.pushState({}, '', '/products/1');
-
     const { getByText } = renderWithRouter('1');
 
     // ローディング表示を確認
@@ -86,8 +83,6 @@ describe('ProductDetailPage', () => {
     globalThis.fetch = async () => {
       return new Response('Internal Server Error', { status: 500 });
     };
-
-    window.history.pushState({}, '', '/products/1');
 
     const { getByText } = renderWithRouter('1');
 
@@ -116,8 +111,6 @@ describe('ProductDetailPage', () => {
       return new Response('Not Found', { status: 404 });
     };
 
-    window.history.pushState({}, '', '/products/999');
-
     const { getByText } = renderWithRouter('999');
 
     await waitFor(() => {
@@ -126,8 +119,6 @@ describe('ProductDetailPage', () => {
   });
 
   test('無効なIDの場合はエラーメッセージを表示する', async () => {
-    window.history.pushState({}, '', '/products/invalid');
-
     const { getByText } = renderWithRouter('invalid');
 
     await waitFor(() => {
@@ -154,8 +145,6 @@ describe('ProductDetailPage', () => {
       return new Response('Not Found', { status: 404 });
     };
 
-    window.history.pushState({}, '', '/products/1');
-
     const { getByText } = renderWithRouter('1');
 
     await waitFor(() => {
@@ -163,10 +152,13 @@ describe('ProductDetailPage', () => {
     });
 
     // 戻るボタンを探してクリック
-    const backButton = getByText(/戻る/);
+    const backButtons = document.querySelectorAll('button');
+    const backButton = Array.from(backButtons).find(button => button.textContent === '戻る');
     expect(backButton).toBeDefined();
 
-    fireEvent.click(backButton);
+    if (backButton) {
+      fireEvent.click(backButton);
+    }
 
     // navigate(-1) が呼ばれたことを確認（実際のナビゲーションは happy-dom では完全にはシミュレートできないが、ボタンの存在は確認できる）
   });
