@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
 import { ProductRepository } from '@application/ports/productRepository';
 import { getProducts } from '@application/product/getProducts';
-import { toProductDtoList } from '@presentation/api/dto/productDto';
+import { getProductById } from '@application/product/getProductById';
+import { toProductDtoList, toProductDto } from '@presentation/api/dto/productDto';
 import { isOk } from '@shared/functional/result';
 
 /**
@@ -10,6 +11,7 @@ import { isOk } from '@shared/functional/result';
  */
 export type ProductController = {
   getProducts: (req: Request, res: Response) => Promise<void>;
+  getProductById: (req: Request, res: Response) => Promise<void>;
 };
 
 /**
@@ -33,6 +35,46 @@ export const createProductController = (repository: ProductRepository): ProductC
             message: result.error.message,
           },
         });
+      }
+    },
+
+    /**
+     * GET /products/:id - 商品詳細を取得
+     */
+    getProductById: async (req: Request, res: Response): Promise<void> => {
+      const id = parseInt(req.params.id, 10);
+
+      if (isNaN(id)) {
+        res.status(400).json({
+          error: {
+            type: 'INVALID_PARAMETER',
+            message: '無効な商品IDです',
+          },
+        });
+        return;
+      }
+
+      const result = await getProductById(repository)(id);
+
+      if (isOk(result)) {
+        const productDto = toProductDto(result.value);
+        res.status(200).json(productDto);
+      } else {
+        if (result.error.type === 'NOT_FOUND') {
+          res.status(404).json({
+            error: {
+              type: result.error.type,
+              message: result.error.message,
+            },
+          });
+        } else {
+          res.status(500).json({
+            error: {
+              type: result.error.type,
+              message: result.error.message,
+            },
+          });
+        }
       }
     },
   };

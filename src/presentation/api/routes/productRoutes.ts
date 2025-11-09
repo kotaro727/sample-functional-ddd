@@ -12,5 +12,8 @@ export const createProductRoutes = (repository: ProductRepository): Router => {
   // GET /api/products - 商品一覧を取得
   router.get('/products', controller.getProducts);
 
+  // GET /api/products/:id - 商品詳細を取得
+  router.get('/products/:id', controller.getProductById);
+
   return router;
 };
