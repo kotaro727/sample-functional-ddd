@@ -20,13 +20,17 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
+    "@types/express": "^5.0.5",
     "@types/react": "^18.2.47",
     "@types/react-dom": "^18.2.18",
+    "@types/supertest": "^6.0.3",
     "@vitejs/plugin-react": "^5.1.0",
+    "supertest": "^7.1.4",
     "typescript": "^5.3.3",
     "vite": "^7.2.2"
   },
   "dependencies": {
+    "express": "^5.1.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   }
