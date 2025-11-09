@@ -82,4 +82,79 @@ describe('ProductController', () => {
       expect(response.body.products).toEqual([]);
     });
   });
+
+  describe('GET /products/:id', () => {
+    test('商品詳細を取得して200を返す', async () => {
+      const productResult = createProduct({
+        id: 1,
+        title: 'iPhone 15',
+        price: 999.99,
+        description: '最新のiPhone',
+      });
+
+      expect(isOk(productResult)).toBe(true);
+      if (!isOk(productResult)) {
+        throw new Error('テストデータの作成に失敗');
+      }
+
+      const testRepository: ProductRepository = {
+        findAll: async () => ok([]),
+        findById: async (id: number) => {
+          if (id === 1) {
+            return ok(productResult.value);
+          }
+          return err({ type: 'NOT_FOUND', message: '商品が見つかりません' });
+        },
+      };
+
+      const app = express();
+      const controller = createProductController(testRepository);
+      app.get('/products/:id', controller.getProductById);
+
+      const response = await request(app).get('/products/1');
+
+      expect(response.status).toBe(200);
+      expect(response.body.id).toBe(1);
+      expect(response.body.title).toBe('iPhone 15');
+      expect(response.body.price).toBe(999.99);
+      expect(response.body.description).toBe('最新のiPhone');
+    });
+
+    test('存在しない商品IDで404を返す', async () => {
+      const testRepository: ProductRepository = {
+        findAll: async () => ok([]),
+        findById: async (id: number) => {
+          return err({ type: 'NOT_FOUND', message: '商品が見つかりません' });
+        },
+      };
+
+      const app = express();
+      const controller = createProductController(testRepository);
+      app.get('/products/:id', controller.getProductById);
+
+      const response = await request(app).get('/products/999');
+
+      expect(response.status).toBe(404);
+      expect(response.body.error).toBeDefined();
+      expect(response.body.error.type).toBe('NOT_FOUND');
+    });
+
+    test('リポジトリエラー時は500を返す', async () => {
+      const testRepository: ProductRepository = {
+        findAll: async () => ok([]),
+        findById: async (id: number) => {
+          return err({ type: 'NETWORK_ERROR', message: 'ネットワークエラー' });
+        },
+      };
+
+      const app = express();
+      const controller = createProductController(testRepository);
+      app.get('/products/:id', controller.getProductById);
+
+      const response = await request(app).get('/products/1');
+
+      expect(response.status).toBe(500);
+      expect(response.body.error).toBeDefined();
+    });
+  });
 });
