@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import type { components } from '@generated/api-schema';
 
 type ProductDto = components['schemas']['ProductDto'];
@@ -66,7 +67,14 @@ export const ProductListPage = () => {
               backgroundColor: '#fff'
             }}
           >
-            <h2 style={{ margin: '0 0 0.5rem 0' }}>{product.title}</h2>
+            <Link
+              to={`/products/${product.id}`}
+              style={{ textDecoration: 'none', color: 'inherit' }}
+            >
+              <h2 style={{ margin: '0 0 0.5rem 0', color: '#2c5aa0', cursor: 'pointer' }}>
+                {product.title}
+              </h2>
+            </Link>
             <p style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#2c5aa0', margin: '0.5rem 0' }}>
               価格: ${product.price}
             </p>

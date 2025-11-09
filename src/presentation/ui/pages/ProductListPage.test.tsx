@@ -1,6 +1,7 @@
 import { describe, test, expect, beforeEach, beforeAll, afterAll } from 'bun:test';
 import { render, waitFor } from '@testing-library/react';
 import { Window } from 'happy-dom';
+import { MemoryRouter } from 'react-router-dom';
 import { ProductListPage } from './ProductListPage';
 
 // happy-dom のセットアップ
@@ -30,6 +31,11 @@ beforeEach(() => {
   // @ts-ignore
   globalThis.fetch = undefined;
 });
+
+// テスト用のラッパーコンポーネント（ルーター付き）
+const renderWithRouter = (component: React.ReactElement) => {
+  return render(<MemoryRouter>{component}</MemoryRouter>);
+};
 
 describe('ProductListPage', () => {
   test('商品一覧を表示する', async () => {
@@ -62,7 +68,7 @@ describe('ProductListPage', () => {
       return new Response('Not Found', { status: 404 });
     };
 
-    const { getByText } = render(<ProductListPage />);
+    const { getByText } = renderWithRouter(<ProductListPage />);
 
     // ローディング表示を確認
     expect(getByText(/読み込み中/)).toBeDefined();
@@ -83,7 +89,7 @@ describe('ProductListPage', () => {
       return new Response('Internal Server Error', { status: 500 });
     };
 
-    const { getByText } = render(<ProductListPage />);
+    const { getByText } = renderWithRouter(<ProductListPage />);
 
     await waitFor(() => {
       expect(getByText(/エラー/)).toBeDefined();
@@ -104,7 +110,7 @@ describe('ProductListPage', () => {
       return new Response('Not Found', { status: 404 });
     };
 
-    const { getByText } = render(<ProductListPage />);
+    const { getByText } = renderWithRouter(<ProductListPage />);
 
     await waitFor(() => {
       expect(getByText(/商品がありません/)).toBeDefined();
