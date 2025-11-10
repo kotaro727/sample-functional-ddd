@@ -9,9 +9,11 @@ import { isOk } from '@shared/functional/result';
  * ProductController
  * 商品関連のHTTPリクエストを処理
  */
+type JsonResponse = ReturnType<Context['json']>;
+
 export type ProductController = {
-  getProducts: (c: Context) => Promise<Response>;
-  getProductById: (c: Context) => Promise<Response>;
+  getProducts: (c: Context) => Promise<JsonResponse>;
+  getProductById: (c: Context) => Promise<JsonResponse>;
 };
 
 const invalidIdResponse = (c: Context) =>
@@ -44,7 +46,7 @@ export const createProductController = (repository: ProductRepository): ProductC
     /**
      * GET /products - 商品一覧を取得
      */
-    getProducts: async (c: Context): Promise<Response> => {
+    getProducts: async (c: Context): Promise<JsonResponse> => {
       const result = await getProducts(repository)();
 
       if (isOk(result)) {
@@ -58,10 +60,9 @@ export const createProductController = (repository: ProductRepository): ProductC
     /**
      * GET /products/:id - 商品詳細を取得
      */
-    getProductById: async (c: Context): Promise<Response> => {
-      const params = c.req.valid('param');
-      const paramId = params?.id ?? c.req.param('id');
-      const id = typeof paramId === 'number' ? paramId : parseInt(paramId ?? '', 10);
+    getProductById: async (c: Context): Promise<JsonResponse> => {
+      const paramId = c.req.param('id');
+      const id = Number.parseInt(paramId ?? '', 10);
 
       if (!Number.isFinite(id)) {
         return invalidIdResponse(c);
