@@ -17,9 +17,9 @@
 ## ツール構成
 
 - **openapi-typescript**: OpenAPIスキーマからTypeScript型定義を生成
-- **swagger-ui-express**: APIドキュメントをブラウザで表示
-- **express-openapi-validator**: リクエスト/レスポンスのスキーマバリデーション
-- **yaml**: YAMLファイルの読み込み
+- **@hono/zod-openapi**: Hono上でZodベースのバリデーションとOpenAPIドキュメント生成を両立
+- **@hono/swagger-ui**: 生成されたドキュメントをSwagger UIとして配信
+- **yaml**: YAMLファイルの読み込み（既存の`openapi.yaml`を引き続き保持）
 
 ## ディレクトリ構成
 
@@ -135,7 +135,7 @@ export const toProductDto = (product: Product): ProductDto => {
 
 ### 4. バリデーションの動作確認
 
-express-openapi-validatorが自動的にリクエスト/レスポンスを検証します。
+@hono/zod-openapiが自動的にリクエスト/レスポンスを検証します。
 
 - **リクエストバリデーション**: 不正なパラメータやボディを自動拒否
 - **レスポンスバリデーション**: スキーマと一致しないレスポンスを検出
@@ -362,7 +362,7 @@ src/generated/
 - [OpenAPI Specification](https://spec.openapis.org/oas/v3.0.3)
 - [openapi-typescript](https://github.com/drwpow/openapi-typescript)
 - [Swagger UI](https://swagger.io/tools/swagger-ui/)
-- [express-openapi-validator](https://github.com/cdimascio/express-openapi-validator)
+- [@hono/zod-openapi](https://github.com/honojs/middleware/tree/main/packages/zod-openapi)
 
 ## まとめ
 

@@ -326,12 +326,12 @@ export type GetProductsResponse = operations['getProducts']['responses']['200'][
 
 ### バリデーション
 
-express-openapi-validatorが自動的に以下を検証:
-- リクエストパラメータ
-- リクエストボディ
-- レスポンスボディ
+`@hono/zod-openapi` が自動的に以下を検証:
+- リクエストパラメータ (`c.req.valid('param')`)
+- リクエストボディ (`c.req.valid('json' | 'form')`)
+- レスポンス（Zodスキーマと`c.json(..., status)`の組み合わせ）
 
-スキーマと一致しないリクエスト/レスポンスはエラーになります。
+スキーマと一致しないリクエスト/レスポンスはデフォルトHookにより`VALIDATION_ERROR`レスポンスが返ります。
 
 ### APIドキュメント
 
@@ -373,7 +373,7 @@ APIサーバー起動後、以下にアクセス:
 
 - **言語**: TypeScript
 - **ランタイム**: Bun
-- **Webフレームワーク**: Express.js（予定）
+- **Webフレームワーク**: Hono (+ @hono/node-server)
 - **ORM**: Prisma（予定）
 - **テスト**: Bun test
 - **UI**: React

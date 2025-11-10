@@ -151,7 +151,7 @@ Infrastructure (Ports実装)
 
 - **言語**: TypeScript
 - **ランタイム**: Bun
-- **フレームワーク**: Express.js（予定）
+- **フレームワーク**: Hono (+ @hono/node-server)
 - **ORM**: Prisma（予定）
 - **テスト**: Bun test
 - **UI**: React

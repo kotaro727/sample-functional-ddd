@@ -6,7 +6,7 @@
 - Hono採用により、以下を狙う:
   - ルータ性能とDXの向上（型安全なContext・ハンドラーシグネチャ）
   - Node/Bun/Edgeのマルチランタイム展開
-  - OpenAPIとの親和性が高い`@hono/openapi`等のエコシステム利用
+  - OpenAPIとの親和性が高い`@hono/zod-openapi`等のエコシステム利用
 
 ## 2. 現行構成サマリ
 | レイヤ | 役割 | 主要ファイル |
@@ -29,18 +29,18 @@ Express固有要素:
 | ランタイム | 当面はNode/Bunで `@hono/node-server` を利用。将来的にEdge移行可能な構成を保つ。 |
 | ルーティング | `new Hono()` をルートアプリとし、`app.route('/api', productRouter)` でサブルータを構築。 |
 | ミドルウェア | `app.use('*', cors())`, `app.use('*', logger())`, JSONボディはHono標準 (`req.json()`) を使用。 |
-| バリデーション | `@hono/openapi` + `@hono/zod-validator` を検討。既存OpenAPI YAMLをソースオブトゥルースに保ち、`openapi-typescript`との整合を維持。 |
+| バリデーション | `@hono/zod-openapi` を採用。Zodスキーマで型/バリデーションとOpenAPIドキュメントを一元管理し、既存YAMLのメタ情報（info/tags等）は流用。 |
 | Swagger UI | `@hono/swagger-ui` で `/api-docs` を提供。既存のYAMLを配信しつつ、HonoのOpenAPI DSLで将来的に自動生成も許容。 |
 | エラーハンドリング | Honoの`app.onError`/`app.notFound` を使用。`Result`型エラーをHTTPへマッピングする共通ヘルパーを作成。 |
 | DI | 既存のControllerファクトリ/Repositoryファクトリを再利用。Hono ContextにDIをぶら下げず、ハンドラー内でクロージャ注入。 |
 
 ## 4. 影響範囲
-- `package.json` / `bun.lock`: Express系依存削除、Hono関連追加 (`hono`, `@hono/node-server`, `@hono/cors`, `@hono/swagger-ui`, `@hono/openapi`).
+- `package.json` / `bun.lock`: Express系依存削除、Hono関連追加 (`hono`, `@hono/node-server`, `@hono/swagger-ui`, `@hono/zod-openapi`, `zod`).
 - `src/server.ts`: Express実装をHono初期化に書き換え。
 - `src/presentation/api/routes/*`: Express RouterからHonoの`Hono`サブルータへ移植。
 - `src/presentation/api/controllers/*`: `Request`/`Response`型依存を排除し、Hono Context互換の薄いアダプター層を追加。
-- OpenAPI/Validator: `express-openapi-validator` を廃止し、`@hono/openapi` または `zod-openapi` + `@hono/zod-validator` へ移行。
-- テスト: `supertest`ベースのHTTPテストを、`@hono/node-server` + `supertest` または Honoの`app.request`で置換。
+- OpenAPI/Validator: `express-openapi-validator` を廃止し、`@hono/zod-openapi` で移行。
+- テスト: `hono/testing` の `testClient` でHTTPレベルを検証し、`supertest` 依存を排除。
 - Docs: `CLAUDE.md`, `CONTRACT_DRIVEN_DEVELOPMENT.md`, `EXPRESS_USAGE.md` を更新しHono版ガイドを追記/差し替え。
 
 ## 5. 設計詳細
@@ -78,7 +78,7 @@ if (import.meta.main) {
 | `app.use(cors())` | `app.use('*', cors())` (from `hono/cors`) | 設定値も移設。 |
 | `app.use(express.json())` | 不要 (`req.json()` 利用) | Honoは`Request`標準API。 |
 | `swagger-ui-express` | `@hono/swagger-ui` | 既存YAML URLを渡す。 |
-| `express-openapi-validator` | `@hono/openapi` + `zod` or `hono-openapi` | リクエスト/レスポンス双方を検証する場合は`validateResponse`ユーティリティ実装が必要。 |
+| `express-openapi-validator` | `@hono/zod-openapi` | リクエスト/レスポンス双方を検証する場合は`createRoute`＋Zodスキーマを併用し、必要に応じて`validateResponse`ユーティリティ実装。 |
 | カスタムエラーハンドラー | `app.onError`, `app.notFound` | Resultエラー種別をHTTPステータスへ変換する関数を共通化。 |
 
 ### 5.3 ルーティング / コントローラー
@@ -99,27 +99,27 @@ export const createProductRoutes = (repository = createDummyJsonProductRepositor
 ```
 
 ### 5.4 バリデーション/Swagger
-- **最優先案**: `@hono/openapi` を導入し、`defineOpenAPI({ doc: openapiDocument })` で既存YAMLを取り込みつつ、ルートに`createRoute()`を付与して型安全なRequest/Responseスキーマを定義。
+- **最優先案**: `@hono/zod-openapi` を導入し、`createRoute()`＋Zodスキーマで型安全なRequest/Response/Componentを定義。既存YAMLは`app.doc`のmeta情報（info/servers/tags）に流用。
 - **互換案**: `express-openapi-validator` の代替として `openapi-enforcer` + カスタムミドルウェアをHonoに組み込む。必要に応じて検証結果をResult型へ変換。
 - Swagger UIは `/api-docs` にYAMLを返すため、`app.get('/openapi.yaml', serveStatic(...))` or `c.newResponse(yamlContent)` を追加。
 
 ### 5.5 テスト戦略
-- `supertest(app)` のExpress依存を外し、`app.request()`（Honoが提供するFetch互換API）を使った統合テストに切り替える。
-- 既存の `productController.test.ts` は、Honoルーターを`createApp().fetch`へリクエストする形に修正。
+- `hono/testing` の `testClient` を標準テストクライアントとして採用し、`supertest` 依存を排除。
+- 既存の `productController.test.ts` は、Honoルーターを`testClient`経由で叩く形に換装し、`createApp().fetch` を使ったE2Eに拡張可能。
 - バリデーションテストでは、OpenAPI違反のリクエストを投げて`VALIDATION_ERROR`レスポンスを検証。
 
 ## 6. マイグレーション手順
 1. **依存関係準備**
-   - `bun add hono @hono/node-server hono/cors @hono/swagger-ui @hono/openapi`
+   - `bun add hono @hono/node-server @hono/swagger-ui @hono/zod-openapi zod`
    - Express関連（`express`, `express-openapi-validator`, `swagger-ui-express`）は後段で削除。
 2. **サイドバイサイド実装**
-   - `src/server.hono.ts` を新規作成し、Hono版`createApp`を実装。
-   - 既存Express版と並行で起動できるよう、開発スクリプトに `dev:api:hono` を追加。
+   - `src/server.ts` をHono実装へ段階的にリライト（必要であれば暫定で`src/server.express.ts`を残す）。
+   - `dev:api` スクリプトは `bun run --watch src/index.ts` のまま流用し、Honoアプリを直接起動。
 3. **ルーター/コントローラー移行**
    - `productRoutes` をHono版へ置換し、テストを更新。
    - Controllerのシグネチャ変更（`Request/Response`除去）。
 4. **OpenAPI連携**
-   - `@hono/openapi` ベースのバリデーション/Swagger組み込み。
+   - `@hono/zod-openapi` ベースのバリデーション/Swagger組み込み。
    - `CONTRACT_DRIVEN_DEVELOPMENT.md` の手順をHono向けに更新。
 5. **クリーンアップ**
    - Express依存・ミドルウェア削除。
@@ -131,16 +131,16 @@ export const createProductRoutes = (repository = createDummyJsonProductRepositor
 ## 7. リスクと対応策
 | リスク | 対応 |
 | --- | --- |
-| OpenAPIバリデーションの互換性低下 | `express-openapi-validator`と同等のR/R検証を `@hono/openapi` + カスタムレスポンスバリデータで補完。必要なら`hono-openapi-validator`などOSSを評価。 |
+| OpenAPIバリデーションの互換性低下 | `@hono/zod-openapi` + カスタムレスポンスバリデータで `express-openapi-validator` と同等のR/R検証を担保。必要なら`hono-openapi-validator`などOSSを評価。 |
 | Controllerシグネチャ変更による影響 | Controllerを純粋関数化し、HTTP層アダプターでHono Contextを扱うことで最小限の改修に抑える。 |
-| テストの大規模修正 | `app.request`を用いることで`supertest`不使用でもHTTPレベルを担保。段階的にテストを書き換える。 |
+| テストの大規模修正 | `hono/testing` の `testClient` に統一し、段階的に既存テストを置き換えてHTTPレベルの担保と型安全性を両立。 |
 | Swagger UI提供方法 | `@hono/swagger-ui`に乗り換えるが、必要に応じて`swagger-ui-dist`を静的配信するバックアップを用意。 |
 
-## 8. 未決事項 / TODO
-- OpenAPI連携方式の最終決定（`@hono/openapi` vs 独自ミドルウェア）。
-- Edge配備（Cloudflare Workers等）を視野に入れるかどうか。
-- 既存Expressドキュメントの扱い（併存か全面置換か）。
-- 新しいテストユーティリティ（`hono/testing`）の導入要否。
+## 8. 決定事項 / TODO状況
+- ✅ **OpenAPI連携方式**: npm上で公開されている公式パッケージ `@hono/zod-openapi` を採用（`@hono/openapi` というパッケージ名は存在しないため注意）。
+- ✅ **Edge配備方針**: 当面は `@hono/node-server` でローカル/Node向けに運用し、将来的にCloudflare Workers等のサーバレス配備に対応する。
+- ✅ **Expressドキュメント**: 歴史的背景と比較資料として既存のExpressドキュメントを残す。
+- ✅ **テストユーティリティ**: `hono/testing` を導入し、HTTPレベルのテストクライアントを統一。
 
 ---
 この設計書をベースに、依存追加→サイドバイサイド実装→検証→切替の順で移行を進める。

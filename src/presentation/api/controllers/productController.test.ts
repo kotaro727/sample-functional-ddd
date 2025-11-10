@@ -1,10 +1,16 @@
 import { describe, test, expect } from 'bun:test';
-import express from 'express';
-import request from 'supertest';
-import { createProductController } from './productController';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { testClient } from 'hono/testing';
+import { createProductRoutes } from '@presentation/api/routes/productRoutes';
 import { ProductRepository } from '@application/ports/productRepository';
 import { createProduct } from '@domain/product/product';
 import { ok, err, isOk } from '@shared/functional/result';
+
+const createTestClient = (repository: ProductRepository) => {
+  const app = new OpenAPIHono();
+  app.route('/api', createProductRoutes(repository));
+  return testClient(app);
+};
 
 describe('ProductController', () => {
   describe('GET /products', () => {
@@ -35,19 +41,17 @@ describe('ProductController', () => {
         findById: async () => err({ type: 'NOT_FOUND', message: 'Not implemented' }),
       };
 
-      // Expressアプリを作成してコントローラーをマウント
-      const app = express();
-      const controller = createProductController(testRepository);
-      app.get('/products', controller.getProducts);
-
-      const response = await request(app).get('/products');
+      // Honoルーターにコントローラーをマウント
+      const client = createTestClient(testRepository);
+      const response = await client.api.products.$get();
+      const body = await response.json();
 
       expect(response.status).toBe(200);
-      expect(response.body.products).toBeDefined();
-      expect(response.body.products.length).toBe(2);
-      expect(response.body.products[0].id).toBe(1);
-      expect(response.body.products[0].title).toBe('iPhone 15');
-      expect(response.body.products[0].price).toBe(999.99);
+      expect(body.products).toBeDefined();
+      expect(body.products.length).toBe(2);
+      expect(body.products[0].id).toBe(1);
+      expect(body.products[0].title).toBe('iPhone 15');
+      expect(body.products[0].price).toBe(999.99);
     });
 
     test('リポジトリエラー時は500を返す', async () => {
@@ -56,14 +60,12 @@ describe('ProductController', () => {
         findById: async () => err({ type: 'NOT_FOUND', message: 'Not implemented' }),
       };
 
-      const app = express();
-      const controller = createProductController(testRepository);
-      app.get('/products', controller.getProducts);
-
-      const response = await request(app).get('/products');
+      const client = createTestClient(testRepository);
+      const response = await client.api.products.$get();
+      const body = await response.json();
 
       expect(response.status).toBe(500);
-      expect(response.body.error).toBeDefined();
+      expect(body.error).toBeDefined();
     });
 
     test('空の商品一覧でも200を返す', async () => {
@@ -72,14 +74,12 @@ describe('ProductController', () => {
         findById: async () => err({ type: 'NOT_FOUND', message: 'Not implemented' }),
       };
 
-      const app = express();
-      const controller = createProductController(testRepository);
-      app.get('/products', controller.getProducts);
-
-      const response = await request(app).get('/products');
+      const client = createTestClient(testRepository);
+      const response = await client.api.products.$get();
+      const body = await response.json();
 
       expect(response.status).toBe(200);
-      expect(response.body.products).toEqual([]);
+      expect(body.products).toEqual([]);
     });
   });
 
@@ -107,17 +107,15 @@ describe('ProductController', () => {
         },
       };
 
-      const app = express();
-      const controller = createProductController(testRepository);
-      app.get('/products/:id', controller.getProductById);
-
-      const response = await request(app).get('/products/1');
+      const client = createTestClient(testRepository);
+      const response = await client.api.products[':id'].$get({ param: { id: 1 } });
+      const body = await response.json();
 
       expect(response.status).toBe(200);
-      expect(response.body.id).toBe(1);
-      expect(response.body.title).toBe('iPhone 15');
-      expect(response.body.price).toBe(999.99);
-      expect(response.body.description).toBe('最新のiPhone');
+      expect(body.id).toBe(1);
+      expect(body.title).toBe('iPhone 15');
+      expect(body.price).toBe(999.99);
+      expect(body.description).toBe('最新のiPhone');
     });
 
     test('存在しない商品IDで404を返す', async () => {
@@ -128,15 +126,13 @@ describe('ProductController', () => {
         },
       };
 
-      const app = express();
-      const controller = createProductController(testRepository);
-      app.get('/products/:id', controller.getProductById);
-
-      const response = await request(app).get('/products/999');
+      const client = createTestClient(testRepository);
+      const response = await client.api.products[':id'].$get({ param: { id: 999 } });
+      const body = await response.json();
 
       expect(response.status).toBe(404);
-      expect(response.body.error).toBeDefined();
-      expect(response.body.error.type).toBe('NOT_FOUND');
+      expect(body.error).toBeDefined();
+      expect(body.error.type).toBe('NOT_FOUND');
     });
 
     test('リポジトリエラー時は500を返す', async () => {
@@ -147,14 +143,12 @@ describe('ProductController', () => {
         },
       };
 
-      const app = express();
-      const controller = createProductController(testRepository);
-      app.get('/products/:id', controller.getProductById);
-
-      const response = await request(app).get('/products/1');
+      const client = createTestClient(testRepository);
+      const response = await client.api.products[':id'].$get({ param: { id: 1 } });
+      const body = await response.json();
 
       expect(response.status).toBe(500);
-      expect(response.body.error).toBeDefined();
+      expect(body.error).toBeDefined();
     });
   });
 });

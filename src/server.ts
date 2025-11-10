@@ -1,61 +1,81 @@
-import express, { Express, Request, Response, NextFunction } from 'express';
-import cors from 'cors';
-import swaggerUi from 'swagger-ui-express';
-import YAML from 'yaml';
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import * as OpenApiValidator from 'express-openapi-validator';
+import YAML from 'yaml';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { swaggerUI } from '@hono/swagger-ui';
+import { cors } from 'hono/cors';
+import { ZodError } from 'zod';
 import { createDummyJsonProductRepository } from '@infrastructure/external/dummyJsonProductRepository';
 import { createProductRoutes } from '@presentation/api/routes/productRoutes';
+import { ProductRepository } from '@application/ports/productRepository';
+
+type CreateAppOptions = {
+  productRepository?: ProductRepository;
+};
 
 /**
- * Expressアプリケーションを作成
+ * Honoアプリケーションを作成
  */
-export const createApp = (): Express => {
-  const app = express();
-
-  // ミドルウェアの設定
-  app.use(cors());
-  app.use(express.json());
-
-  // OpenAPI ドキュメント（Swagger UI）の設定
+export const createApp = (options: CreateAppOptions = {}) => {
   const openapiPath = join(process.cwd(), 'openapi', 'openapi.yaml');
   const openapiDocument = YAML.parse(readFileSync(openapiPath, 'utf8'));
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openapiDocument));
 
-  // OpenAPI バリデーションの設定
-  app.use(
-    OpenApiValidator.middleware({
-      apiSpec: openapiPath,
-      validateRequests: true, // リクエストのバリデーション
-      validateResponses: true, // レスポンスのバリデーション
-    })
-  );
-
-  // リポジトリの作成（依存性注入）
-  const productRepository = createDummyJsonProductRepository();
-
-  // ルーティングの設定
-  app.use('/api', createProductRoutes(productRepository));
-
-  // OpenAPI バリデーションエラーハンドラー
-  app.use((err: any, req: Request, res: Response, next: NextFunction) => {
-    if (err.status) {
-      res.status(err.status).json({
-        error: {
-          type: 'VALIDATION_ERROR',
-          message: err.message,
-          errors: err.errors,
-        },
-      });
-    } else {
-      next(err);
-    }
+  const app = new OpenAPIHono({
+    defaultHook: (result, c) => {
+      if (!result.success) {
+        return c.json(
+          {
+            error: {
+              type: 'VALIDATION_ERROR',
+              message: 'リクエストがスキーマに一致しません',
+              issues: result.error.issues,
+            },
+          },
+          400
+        );
+      }
+    },
   });
 
-  // 404ハンドラー
-  app.use((req, res) => {
-    res.status(404).json({ error: 'Not Found' });
+  app.use('*', cors());
+
+  const productRepository = options.productRepository ?? createDummyJsonProductRepository();
+  app.route('/api', createProductRoutes(productRepository));
+
+  app.doc('/doc', {
+    openapi: openapiDocument.openapi ?? '3.0.3',
+    info: openapiDocument.info,
+    servers: openapiDocument.servers,
+    tags: openapiDocument.tags,
+  });
+  app.get('/api-docs', swaggerUI({ url: '/doc' }));
+
+  app.notFound((c) => c.json({ error: 'Not Found' }, 404));
+
+  app.onError((err, c) => {
+    if (err instanceof ZodError) {
+      return c.json(
+        {
+          error: {
+            type: 'VALIDATION_ERROR',
+            message: '入力値が不正です',
+            issues: err.issues,
+          },
+        },
+        400
+      );
+    }
+
+    console.error(err);
+    return c.json(
+      {
+        error: {
+          type: 'INTERNAL_SERVER_ERROR',
+          message: '予期しないエラーが発生しました',
+        },
+      },
+      500
+    );
   });
 
   return app;
