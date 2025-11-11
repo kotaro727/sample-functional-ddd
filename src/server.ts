@@ -4,6 +4,7 @@ import YAML from 'yaml';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { swaggerUI } from '@hono/swagger-ui';
 import { cors } from 'hono/cors';
+import { trimTrailingSlash } from 'hono/trailing-slash';
 import { ZodError } from 'zod';
 import { createDummyJsonProductRepository } from '@infrastructure/external/dummyJsonProductRepository';
 import { createProductRoutes } from '@presentation/api/routes/productRoutes';
@@ -42,6 +43,7 @@ export const createApp = (options: CreateAppOptions = {}) => {
   });
 
   app.use('*', cors());
+  app.use('*', trimTrailingSlash());
 
   // ルートパス
   app.get('/', (c) => {
