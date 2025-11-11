@@ -7,6 +7,7 @@ import { Result } from '@shared/functional/result';
 export type ProductRepositoryError =
   | { type: 'NETWORK_ERROR'; message: string }
   | { type: 'NOT_FOUND'; message: string }
+  | { type: 'DATABASE_ERROR'; message: string }
   | { type: 'UNKNOWN_ERROR'; message: string };
 
 /**
@@ -23,4 +24,14 @@ export interface ProductRepository {
    * IDで商品を取得
    */
   findById: (id: number) => Promise<Result<Product, ProductRepositoryError>>;
+
+  /**
+   * 商品を保存（新規作成または更新）
+   */
+  save?: (product: Product) => Promise<Result<Product, ProductRepositoryError>>;
+
+  /**
+   * 商品を削除
+   */
+  delete?: (id: number) => Promise<Result<void, ProductRepositoryError>>;
 }

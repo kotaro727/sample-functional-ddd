@@ -39,3 +39,6 @@ coverage/
 
 # 自動生成されたファイル
 src/generated/
+# SQLite database files
+data/*.db
+data/*.db-*
