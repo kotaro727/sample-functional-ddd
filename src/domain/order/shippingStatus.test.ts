@@ -10,22 +10,22 @@ import {
 import { isOk, isErr } from '@shared/functional/result';
 
 describe('ShippingStatus', () => {
-  describe('Type guards', () => {
-    it('should identify PENDING status', () => {
+  describe('型ガード', () => {
+    it('PENDING状態を正しく識別できる', () => {
       const status: ShippingStatus = 'PENDING';
       expect(isPending(status)).toBe(true);
       expect(isShipped(status)).toBe(false);
       expect(isDelivered(status)).toBe(false);
     });
 
-    it('should identify SHIPPED status', () => {
+    it('SHIPPED状態を正しく識別できる', () => {
       const status: ShippingStatus = 'SHIPPED';
       expect(isPending(status)).toBe(false);
       expect(isShipped(status)).toBe(true);
       expect(isDelivered(status)).toBe(false);
     });
 
-    it('should identify DELIVERED status', () => {
+    it('DELIVERED状態を正しく識別できる', () => {
       const status: ShippingStatus = 'DELIVERED';
       expect(isPending(status)).toBe(false);
       expect(isShipped(status)).toBe(false);
@@ -33,32 +33,32 @@ describe('ShippingStatus', () => {
     });
   });
 
-  describe('State transitions', () => {
-    it('should allow transition from PENDING to SHIPPED', () => {
+  describe('状態遷移', () => {
+    it('PENDINGからSHIPPEDへの遷移を許可する', () => {
       expect(canTransitionTo('PENDING', 'SHIPPED')).toBe(true);
     });
 
-    it('should allow transition from PENDING to DELIVERED', () => {
+    it('PENDINGからDELIVEREDへの遷移を許可する', () => {
       expect(canTransitionTo('PENDING', 'DELIVERED')).toBe(true);
     });
 
-    it('should allow transition from SHIPPED to DELIVERED', () => {
+    it('SHIPPEDからDELIVEREDへの遷移を許可する', () => {
       expect(canTransitionTo('SHIPPED', 'DELIVERED')).toBe(true);
     });
 
-    it('should not allow transition from SHIPPED to PENDING', () => {
+    it('SHIPPEDからPENDINGへの遷移を許可しない', () => {
       expect(canTransitionTo('SHIPPED', 'PENDING')).toBe(false);
     });
 
-    it('should not allow transition from DELIVERED to PENDING', () => {
+    it('DELIVEREDからPENDINGへの遷移を許可しない', () => {
       expect(canTransitionTo('DELIVERED', 'PENDING')).toBe(false);
     });
 
-    it('should not allow transition from DELIVERED to SHIPPED', () => {
+    it('DELIVEREDからSHIPPEDへの遷移を許可しない', () => {
       expect(canTransitionTo('DELIVERED', 'SHIPPED')).toBe(false);
     });
 
-    it('should allow staying in the same state', () => {
+    it('同じ状態への遷移を許可する', () => {
       expect(canTransitionTo('PENDING', 'PENDING')).toBe(true);
       expect(canTransitionTo('SHIPPED', 'SHIPPED')).toBe(true);
       expect(canTransitionTo('DELIVERED', 'DELIVERED')).toBe(true);
@@ -66,7 +66,7 @@ describe('ShippingStatus', () => {
   });
 
   describe('transitionTo', () => {
-    it('should successfully transition from PENDING to SHIPPED', () => {
+    it('PENDINGからSHIPPEDへの遷移に成功する', () => {
       const result = transitionTo('PENDING', 'SHIPPED');
       expect(isOk(result)).toBe(true);
       if (isOk(result)) {
@@ -74,7 +74,7 @@ describe('ShippingStatus', () => {
       }
     });
 
-    it('should successfully transition from SHIPPED to DELIVERED', () => {
+    it('SHIPPEDからDELIVEREDへの遷移に成功する', () => {
       const result = transitionTo('SHIPPED', 'DELIVERED');
       expect(isOk(result)).toBe(true);
       if (isOk(result)) {
@@ -82,7 +82,7 @@ describe('ShippingStatus', () => {
       }
     });
 
-    it('should fail to transition from SHIPPED to PENDING', () => {
+    it('SHIPPEDからPENDINGへの遷移に失敗する', () => {
       const result = transitionTo('SHIPPED', 'PENDING');
       expect(isErr(result)).toBe(true);
       if (isErr(result)) {
@@ -92,7 +92,7 @@ describe('ShippingStatus', () => {
       }
     });
 
-    it('should fail to transition from DELIVERED to any other state', () => {
+    it('DELIVEREDから他の状態への遷移に失敗する', () => {
       const resultToPending = transitionTo('DELIVERED', 'PENDING');
       expect(isErr(resultToPending)).toBe(true);
 
@@ -100,7 +100,7 @@ describe('ShippingStatus', () => {
       expect(isErr(resultToShipped)).toBe(true);
     });
 
-    it('should allow staying in the same state', () => {
+    it('同じ状態への遷移を許可する', () => {
       const result = transitionTo('PENDING', 'PENDING');
       expect(isOk(result)).toBe(true);
       if (isOk(result)) {

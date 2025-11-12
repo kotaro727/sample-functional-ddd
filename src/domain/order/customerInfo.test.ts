@@ -8,7 +8,7 @@ import { isOk, isErr } from '@shared/functional/result';
 
 describe('CustomerInfo', () => {
   describe('validateCustomerInfo', () => {
-    it('should successfully validate valid customer info', () => {
+    it('有効な顧客情報を正しく検証できる', () => {
       const unvalidated: UnvalidatedCustomerInfo = {
         name: '山田太郎',
         email: 'yamada@example.com',
@@ -26,7 +26,7 @@ describe('CustomerInfo', () => {
       }
     });
 
-    it('should normalize phone number by removing hyphens', () => {
+    it('電話番号のハイフンを自動で削除できる', () => {
       const unvalidated: UnvalidatedCustomerInfo = {
         name: '山田太郎',
         email: 'yamada@example.com',
@@ -41,7 +41,7 @@ describe('CustomerInfo', () => {
       }
     });
 
-    it('should accept 10-digit landline numbers', () => {
+    it('10桁の固定電話番号を受け入れる', () => {
       const unvalidated: UnvalidatedCustomerInfo = {
         name: '山田太郎',
         email: 'yamada@example.com',
@@ -56,7 +56,7 @@ describe('CustomerInfo', () => {
       }
     });
 
-    it('should fail if name is empty', () => {
+    it('顧客名が空の場合はエラーになる', () => {
       const unvalidated: UnvalidatedCustomerInfo = {
         name: '',
         email: 'yamada@example.com',
@@ -72,7 +72,7 @@ describe('CustomerInfo', () => {
       }
     });
 
-    it('should fail if email format is invalid', () => {
+    it('メールアドレスの形式が不正な場合はエラーになる', () => {
       const unvalidated: UnvalidatedCustomerInfo = {
         name: '山田太郎',
         email: 'invalid-email',
@@ -88,7 +88,7 @@ describe('CustomerInfo', () => {
       }
     });
 
-    it('should fail if email is empty', () => {
+    it('メールアドレスが空の場合はエラーになる', () => {
       const unvalidated: UnvalidatedCustomerInfo = {
         name: '山田太郎',
         email: '',
@@ -103,7 +103,7 @@ describe('CustomerInfo', () => {
       }
     });
 
-    it('should fail if phone number is too short', () => {
+    it('電話番号が短すぎる場合はエラーになる', () => {
       const unvalidated: UnvalidatedCustomerInfo = {
         name: '山田太郎',
         email: 'yamada@example.com',
@@ -119,7 +119,7 @@ describe('CustomerInfo', () => {
       }
     });
 
-    it('should fail if phone number is too long', () => {
+    it('電話番号が長すぎる場合はエラーになる', () => {
       const unvalidated: UnvalidatedCustomerInfo = {
         name: '山田太郎',
         email: 'yamada@example.com',
@@ -134,7 +134,7 @@ describe('CustomerInfo', () => {
       }
     });
 
-    it('should fail if phone number does not start with 0', () => {
+    it('電話番号が0で始まらない場合はエラーになる', () => {
       const unvalidated: UnvalidatedCustomerInfo = {
         name: '山田太郎',
         email: 'yamada@example.com',
@@ -149,7 +149,7 @@ describe('CustomerInfo', () => {
       }
     });
 
-    it('should fail if phone number contains non-digits', () => {
+    it('電話番号に数字以外が含まれている場合はエラーになる', () => {
       const unvalidated: UnvalidatedCustomerInfo = {
         name: '山田太郎',
         email: 'yamada@example.com',
@@ -164,7 +164,7 @@ describe('CustomerInfo', () => {
       }
     });
 
-    it('should trim whitespace from all fields', () => {
+    it('全てのフィールドの前後の空白を削除できる', () => {
       const unvalidated: UnvalidatedCustomerInfo = {
         name: ' 山田太郎 ',
         email: ' yamada@example.com ',

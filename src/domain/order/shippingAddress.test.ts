@@ -8,7 +8,7 @@ import { isOk, isErr } from '@shared/functional/result';
 
 describe('ShippingAddress', () => {
   describe('validateShippingAddress', () => {
-    it('should successfully validate a valid address', () => {
+    it('有効な住所を正しく検証できる', () => {
       const unvalidated: UnvalidatedShippingAddress = {
         postalCode: '123-4567',
         prefecture: '東京都',
@@ -28,7 +28,7 @@ describe('ShippingAddress', () => {
       }
     });
 
-    it('should normalize postal code with hyphen', () => {
+    it('郵便番号にハイフンを自動で追加できる', () => {
       const unvalidated: UnvalidatedShippingAddress = {
         postalCode: '1234567', // ハイフンなし
         prefecture: '東京都',
@@ -44,7 +44,7 @@ describe('ShippingAddress', () => {
       }
     });
 
-    it('should fail if postal code format is invalid (not 7 digits)', () => {
+    it('郵便番号が7桁でない場合はエラーになる', () => {
       const unvalidated: UnvalidatedShippingAddress = {
         postalCode: '12345', // 5桁
         prefecture: '東京都',
@@ -61,7 +61,7 @@ describe('ShippingAddress', () => {
       }
     });
 
-    it('should fail if postal code contains non-digits', () => {
+    it('郵便番号に数字以外が含まれている場合はエラーになる', () => {
       const unvalidated: UnvalidatedShippingAddress = {
         postalCode: 'abc-defg',
         prefecture: '東京都',
@@ -77,7 +77,7 @@ describe('ShippingAddress', () => {
       }
     });
 
-    it('should fail if prefecture is empty', () => {
+    it('都道府県が空の場合はエラーになる', () => {
       const unvalidated: UnvalidatedShippingAddress = {
         postalCode: '123-4567',
         prefecture: '',
@@ -94,7 +94,7 @@ describe('ShippingAddress', () => {
       }
     });
 
-    it('should fail if city is empty', () => {
+    it('市区町村が空の場合はエラーになる', () => {
       const unvalidated: UnvalidatedShippingAddress = {
         postalCode: '123-4567',
         prefecture: '東京都',
@@ -111,7 +111,7 @@ describe('ShippingAddress', () => {
       }
     });
 
-    it('should fail if addressLine is empty', () => {
+    it('町名番地が空の場合はエラーになる', () => {
       const unvalidated: UnvalidatedShippingAddress = {
         postalCode: '123-4567',
         prefecture: '東京都',
@@ -128,7 +128,7 @@ describe('ShippingAddress', () => {
       }
     });
 
-    it('should trim whitespace from all fields', () => {
+    it('全てのフィールドの前後の空白を削除できる', () => {
       const unvalidated: UnvalidatedShippingAddress = {
         postalCode: ' 123-4567 ',
         prefecture: ' 東京都 ',

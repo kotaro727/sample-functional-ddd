@@ -4,7 +4,7 @@ import { isOk, isErr } from '@shared/functional/result';
 
 describe('OrderItem', () => {
   describe('createOrderItem', () => {
-    it('should successfully create an order item with valid data', () => {
+    it('有効なデータで注文明細を作成できる', () => {
       const result = createOrderItem(1, 5, 1000);
 
       expect(isOk(result)).toBe(true);
@@ -15,7 +15,7 @@ describe('OrderItem', () => {
       }
     });
 
-    it('should fail if product ID is zero', () => {
+    it('商品IDが0の場合はエラーになる', () => {
       const result = createOrderItem(0, 5, 1000);
 
       expect(isErr(result)).toBe(true);
@@ -25,7 +25,7 @@ describe('OrderItem', () => {
       }
     });
 
-    it('should fail if product ID is negative', () => {
+    it('商品IDが負の場合はエラーになる', () => {
       const result = createOrderItem(-1, 5, 1000);
 
       expect(isErr(result)).toBe(true);
@@ -34,7 +34,7 @@ describe('OrderItem', () => {
       }
     });
 
-    it('should fail if quantity is zero', () => {
+    it('数量が0の場合はエラーになる', () => {
       const result = createOrderItem(1, 0, 1000);
 
       expect(isErr(result)).toBe(true);
@@ -44,7 +44,7 @@ describe('OrderItem', () => {
       }
     });
 
-    it('should fail if quantity is negative', () => {
+    it('数量が負の場合はエラーになる', () => {
       const result = createOrderItem(1, -5, 1000);
 
       expect(isErr(result)).toBe(true);
@@ -53,7 +53,7 @@ describe('OrderItem', () => {
       }
     });
 
-    it('should fail if quantity exceeds maximum (999)', () => {
+    it('数量が最大値999を超える場合はエラーになる', () => {
       const result = createOrderItem(1, 1000, 1000);
 
       expect(isErr(result)).toBe(true);
@@ -63,7 +63,7 @@ describe('OrderItem', () => {
       }
     });
 
-    it('should fail if unit price is negative', () => {
+    it('単価が負の場合はエラーになる', () => {
       const result = createOrderItem(1, 5, -100);
 
       expect(isErr(result)).toBe(true);
@@ -73,7 +73,7 @@ describe('OrderItem', () => {
       }
     });
 
-    it('should allow unit price of zero (free items)', () => {
+    it('単価が0の場合は許可される（無料商品）', () => {
       const result = createOrderItem(1, 5, 0);
 
       expect(isOk(result)).toBe(true);
@@ -84,7 +84,7 @@ describe('OrderItem', () => {
   });
 
   describe('calculateSubtotal', () => {
-    it('should calculate correct subtotal', () => {
+    it('小計を正しく計算できる', () => {
       const result = createOrderItem(1, 5, 1000);
 
       expect(isOk(result)).toBe(true);
@@ -94,7 +94,7 @@ describe('OrderItem', () => {
       }
     });
 
-    it('should calculate zero for free items', () => {
+    it('無料商品の小計は0になる', () => {
       const result = createOrderItem(1, 10, 0);
 
       expect(isOk(result)).toBe(true);
@@ -104,7 +104,7 @@ describe('OrderItem', () => {
       }
     });
 
-    it('should handle decimal prices correctly', () => {
+    it('小数点の単価を正しく計算できる', () => {
       const result = createOrderItem(1, 3, 99.99);
 
       expect(isOk(result)).toBe(true);

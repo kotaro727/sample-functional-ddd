@@ -25,7 +25,7 @@ describe('ValidatedOrder', () => {
   };
 
   describe('createValidatedOrder', () => {
-    it('should successfully create a validated order with valid data', () => {
+    it('有効なデータで検証済み注文を作成できる', () => {
       const shippingAddressResult = createValidShippingAddress();
       const customerInfoResult = createValidCustomerInfo();
       const orderItem1 = createOrderItem(1, 2, 1000);
@@ -54,7 +54,7 @@ describe('ValidatedOrder', () => {
       }
     });
 
-    it('should fail if order items array is empty', () => {
+    it('注文明細が空の場合はエラーになる', () => {
       const shippingAddressResult = createValidShippingAddress();
       const customerInfoResult = createValidCustomerInfo();
 
@@ -76,7 +76,7 @@ describe('ValidatedOrder', () => {
       }
     });
 
-    it('should correctly calculate total amount for single item', () => {
+    it('単一明細の合計金額を正しく計算できる', () => {
       const shippingAddressResult = createValidShippingAddress();
       const customerInfoResult = createValidCustomerInfo();
       const orderItem = createOrderItem(1, 5, 1000);
@@ -99,7 +99,7 @@ describe('ValidatedOrder', () => {
       }
     });
 
-    it('should correctly calculate total amount for multiple items', () => {
+    it('複数明細の合計金額を正しく計算できる', () => {
       const shippingAddressResult = createValidShippingAddress();
       const customerInfoResult = createValidCustomerInfo();
       const item1 = createOrderItem(1, 2, 1000);
@@ -134,7 +134,7 @@ describe('ValidatedOrder', () => {
   });
 
   describe('calculateTotalAmount', () => {
-    it('should calculate correct total amount', () => {
+    it('合計金額を正しく計算できる', () => {
       const shippingAddressResult = createValidShippingAddress();
       const customerInfoResult = createValidCustomerInfo();
       const item1 = createOrderItem(1, 2, 1000);
