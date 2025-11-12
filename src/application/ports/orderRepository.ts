@@ -1,5 +1,5 @@
 import type { Result } from '@shared/functional/result';
-import type { ValidatedOrder } from '@domain/order/order';
+import type { ValidatedOrder, PersistedValidatedOrder, ShippingStatus } from '@domain/order/order';
 
 /**
  * OrderRepository のエラー型
@@ -17,26 +17,27 @@ export type OrderRepositoryError =
 export interface OrderRepository {
   /**
    * 注文を作成
+   * ValidatedOrderを受け取り、IDとタイムスタンプを付与してPersistedValidatedOrderを返す
    */
-  create: (order: ValidatedOrder) => Promise<Result<ValidatedOrder, OrderRepositoryError>>;
+  create: (order: ValidatedOrder) => Promise<Result<PersistedValidatedOrder, OrderRepositoryError>>;
 
   /**
    * 全ての注文を取得
    */
-  findAll: () => Promise<Result<readonly ValidatedOrder[], OrderRepositoryError>>;
+  findAll: () => Promise<Result<readonly PersistedValidatedOrder[], OrderRepositoryError>>;
 
   /**
    * IDで注文を取得
    */
-  findById: (id: number) => Promise<Result<ValidatedOrder, OrderRepositoryError>>;
+  findById: (id: number) => Promise<Result<PersistedValidatedOrder, OrderRepositoryError>>;
 
   /**
    * 注文のステータスを更新
    */
   updateStatus: (
     id: number,
-    status: 'PENDING' | 'SHIPPED' | 'DELIVERED'
-  ) => Promise<Result<ValidatedOrder, OrderRepositoryError>>;
+    status: ShippingStatus
+  ) => Promise<Result<PersistedValidatedOrder, OrderRepositoryError>>;
 
   /**
    * 注文を削除（キャンセル）

@@ -1,22 +1,42 @@
 /**
- * ValidatedOrder - 検証済み注文（仮の型定義）
- * TODO: 後でドメインモデルとして完全実装
+ * Order ドメインモデルの統合エクスポート
  */
-export type ValidatedOrder = {
-  id: number;
-  orderItems: Array<{ productId: number; quantity: number }>;
-  shippingAddress: { // ValidatedShippingAddressのIdを持つべき
-    postalCode: string;
-    prefecture: string;
-    city: string;
-    addressLine: string;
-  };
-  customerInfo: { // ValidatedCustomerInfoのIdを持つべき
-    name: string;
-    email: string;
-    phone: string;
-  };
-  shippingStatus: 'PENDING' | 'SHIPPED' | 'DELIVERED'; // 個別で定義すべき
-  totalAmount: number;
-  createdAt: Date; // DBの知識
-};
+
+// 配送ステータス
+export type { ShippingStatus, ShippingStatusError } from './shippingStatus';
+export {
+  isPending,
+  isShipped,
+  isDelivered,
+  canTransitionTo,
+  transitionTo,
+} from './shippingStatus';
+
+// 配送先住所
+export type {
+  UnvalidatedShippingAddress,
+  ValidatedShippingAddress,
+  ShippingAddressValidationError,
+} from './shippingAddress';
+export { validateShippingAddress } from './shippingAddress';
+
+// 顧客情報
+export type {
+  UnvalidatedCustomerInfo,
+  ValidatedCustomerInfo,
+  CustomerInfoValidationError,
+} from './customerInfo';
+export { validateCustomerInfo } from './customerInfo';
+
+// 注文明細
+export type { OrderItem, OrderItemValidationError } from './orderItem';
+export { createOrderItem, calculateSubtotal } from './orderItem';
+
+// 検証済み注文
+export type {
+  ValidatedOrder,
+  PersistedValidatedOrder,
+  ValidatedOrderCreationError,
+  CreateValidatedOrderParams,
+} from './validatedOrder';
+export { createValidatedOrder, calculateTotalAmount } from './validatedOrder';

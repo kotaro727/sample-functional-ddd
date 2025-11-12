@@ -1,5 +1,5 @@
 import { OrderRepository, OrderRepositoryError } from '@application/ports/orderRepository';
-import { ValidatedOrder } from '@domain/order/order';
+import { ValidatedOrder, PersistedValidatedOrder, ShippingStatus } from '@domain/order/order';
 import { Result, ok, err } from '@shared/functional/result';
 
 /**
@@ -8,16 +8,18 @@ import { Result, ok, err } from '@shared/functional/result';
  */
 export const createInMemoryOrderRepository = (): OrderRepository => {
   // メモリ上の注文データストア
-  const orders: Map<number, ValidatedOrder> = new Map();
+  const orders: Map<number, PersistedValidatedOrder> = new Map();
   let nextId = 1;
 
   return {
     /**
      * 注文を作成
      */
-    create: async (order: ValidatedOrder): Promise<Result<ValidatedOrder, OrderRepositoryError>> => {
+    create: async (
+      order: ValidatedOrder
+    ): Promise<Result<PersistedValidatedOrder, OrderRepositoryError>> => {
       try {
-        const newOrder: ValidatedOrder = {
+        const newOrder: PersistedValidatedOrder = {
           ...order,
           id: nextId++,
           createdAt: new Date(),
@@ -35,10 +37,10 @@ export const createInMemoryOrderRepository = (): OrderRepository => {
     /**
      * 全ての注文を取得
      */
-    findAll: async (): Promise<Result<readonly ValidatedOrder[], OrderRepositoryError>> => {
+    findAll: async (): Promise<Result<readonly PersistedValidatedOrder[], OrderRepositoryError>> => {
       try {
         const allOrders = Array.from(orders.values());
-        return ok(allOrders as readonly ValidatedOrder[]);
+        return ok(allOrders as readonly PersistedValidatedOrder[]);
       } catch (error) {
         return err({
           type: 'UNKNOWN_ERROR',
@@ -50,7 +52,7 @@ export const createInMemoryOrderRepository = (): OrderRepository => {
     /**
      * IDで注文を取得
      */
-    findById: async (id: number): Promise<Result<ValidatedOrder, OrderRepositoryError>> => {
+    findById: async (id: number): Promise<Result<PersistedValidatedOrder, OrderRepositoryError>> => {
       try {
         const order = orders.get(id);
         if (!order) {
@@ -73,8 +75,8 @@ export const createInMemoryOrderRepository = (): OrderRepository => {
      */
     updateStatus: async (
       id: number,
-      status: 'PENDING' | 'SHIPPED' | 'DELIVERED'
-    ): Promise<Result<ValidatedOrder, OrderRepositoryError>> => {
+      status: ShippingStatus
+    ): Promise<Result<PersistedValidatedOrder, OrderRepositoryError>> => {
       try {
         const order = orders.get(id);
         if (!order) {
@@ -84,7 +86,7 @@ export const createInMemoryOrderRepository = (): OrderRepository => {
           });
         }
 
-        const updatedOrder: ValidatedOrder = {
+        const updatedOrder: PersistedValidatedOrder = {
           ...order,
           shippingStatus: status,
         };
