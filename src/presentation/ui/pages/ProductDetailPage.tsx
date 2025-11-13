@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import type { components } from '@generated/api-schema';
+import { useCartContext } from '../contexts/CartContext';
 
 type ProductDto = components['schemas']['ProductDto'];
 type ErrorResponse = components['schemas']['ErrorResponse'];
@@ -11,11 +12,14 @@ type ErrorResponse = components['schemas']['ErrorResponse'];
 export const ProductDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { addToCart } = useCartContext();
 
   const [product, setProduct] = useState<ProductDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const [quantity, setQuantity] = useState(1);
+  const [addedToCart, setAddedToCart] = useState(false);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -59,6 +63,27 @@ export const ProductDetailPage = () => {
 
   const handleBack = () => {
     navigate(-1);
+  };
+
+  const handleAddToCart = () => {
+    if (product) {
+      addToCart(
+        {
+          productId: product.id,
+          title: product.title,
+          price: product.price,
+        },
+        quantity
+      );
+      setAddedToCart(true);
+      setTimeout(() => setAddedToCart(false), 2000);
+    }
+  };
+
+  const handleQuantityChange = (newQuantity: number) => {
+    if (newQuantity >= 1) {
+      setQuantity(newQuantity);
+    }
   };
 
   if (loading) {
@@ -126,12 +151,83 @@ export const ProductDetailPage = () => {
           <div style={{
             color: '#666',
             lineHeight: '1.6',
-            margin: '1rem 0 0 0'
+            margin: '1rem 0'
           }}>
             <h2 style={{ fontSize: '1.2rem', marginBottom: '0.5rem' }}>商品説明</h2>
             <p>{product.description}</p>
           </div>
         )}
+
+        <div style={{
+          marginTop: '2rem',
+          paddingTop: '2rem',
+          borderTop: '1px solid #eee'
+        }}>
+          <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>カートに追加</h3>
+
+          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '1rem' }}>
+            <label htmlFor="quantity">数量:</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <button
+                onClick={() => handleQuantityChange(quantity - 1)}
+                style={{
+                  padding: '0.5rem',
+                  width: '2rem',
+                  backgroundColor: '#f0f0f0',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  cursor: 'pointer'
+                }}
+              >
+                -
+              </button>
+              <input
+                id="quantity"
+                type="number"
+                min="1"
+                value={quantity}
+                onChange={(e) => handleQuantityChange(parseInt(e.target.value) || 1)}
+                style={{
+                  width: '4rem',
+                  padding: '0.5rem',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  textAlign: 'center'
+                }}
+              />
+              <button
+                onClick={() => handleQuantityChange(quantity + 1)}
+                style={{
+                  padding: '0.5rem',
+                  width: '2rem',
+                  backgroundColor: '#f0f0f0',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  cursor: 'pointer'
+                }}
+              >
+                +
+              </button>
+            </div>
+          </div>
+
+          <button
+            onClick={handleAddToCart}
+            style={{
+              padding: '1rem 2rem',
+              backgroundColor: addedToCart ? '#28a745' : '#2c5aa0',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '1rem',
+              fontWeight: 'bold',
+              transition: 'background-color 0.3s'
+            }}
+          >
+            {addedToCart ? '✓ カートに追加しました' : 'カートに追加'}
+          </button>
+        </div>
       </div>
     </div>
   );
