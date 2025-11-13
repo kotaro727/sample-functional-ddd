@@ -1,7 +1,6 @@
 import { OrderRepository } from '@application/ports/orderRepository';
 import { ProductRepository } from '@application/ports/productRepository';
 import {
-  ValidatedOrder,
   PersistedValidatedOrder,
   UnvalidatedShippingAddress,
   UnvalidatedCustomerInfo,
@@ -10,8 +9,7 @@ import {
   createOrderItem,
   createValidatedOrder,
 } from '@domain/order/order';
-import { Result, ok, err } from '@shared/functional/result';
-import { isErr } from '@shared/functional/result';
+import { Result, ok, err, isErr } from '@shared/functional/result';
 
 /**
  * 注文作成のエラー型

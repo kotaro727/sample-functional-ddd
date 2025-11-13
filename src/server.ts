@@ -63,7 +63,7 @@ export const createApp = (options: CreateAppOptions = {}) => {
   const orderRepository = options.orderRepository ?? createInMemoryOrderRepository();
 
   app.route('/api', createProductRoutes(productRepository));
-  app.route('/api', createOrderRoutes(orderRepository));
+  app.route('/api', createOrderRoutes(orderRepository, productRepository));
 
   app.doc('/doc', {
     openapi: openapiDocument.openapi ?? '3.0.3',

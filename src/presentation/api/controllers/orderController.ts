@@ -1,5 +1,9 @@
 import type { Context } from 'hono';
 import { OrderRepository } from '@application/ports/orderRepository';
+import { ProductRepository } from '@application/ports/productRepository';
+import { createOrder } from '@application/order/createOrder';
+import { isErr } from '@shared/functional/result';
+import { PersistedValidatedOrder } from '@domain/order/order';
 
 /**
  * OrderController
@@ -16,115 +20,243 @@ export type OrderController = {
 };
 
 /**
+ * PersistedValidatedOrderをDTO形式に変換
+ */
+const toOrderDto = (order: PersistedValidatedOrder) => ({
+  id: order.id,
+  orderItems: order.orderItems.map((item) => ({
+    productId: item.productId,
+    quantity: item.quantity,
+  })),
+  shippingAddress: order.shippingAddress,
+  customerInfo: order.customerInfo,
+  shippingStatus: order.shippingStatus,
+  totalAmount: order.totalAmount,
+  createdAt: order.createdAt.toISOString(),
+});
+
+/**
  * OrderControllerを作成
  */
-export const createOrderController = (repository: OrderRepository): OrderController => {
+export const createOrderController = (
+  repository: OrderRepository,
+  productRepository: ProductRepository
+): OrderController => {
   return {
     /**
      * POST /orders - 注文を作成
      */
     createOrder: async (c: Context): Promise<JsonResponse> => {
-      // TODO: 実装予定
-      // 1. リクエストボディから注文情報を取得
-      // 2. UnvalidatedOrderを作成
-      // 3. バリデーション（validateOrder）
-      // 4. 商品の在庫チェック（ProductRepositoryと連携）
-      // 5. 合計金額の計算
-      // 6. Repositoryで永続化
-      // 7. DTOに変換してレスポンス
-      return c.json(
-        {
-          error: {
-            type: 'NOT_IMPLEMENTED',
-            message: '注文作成機能は未実装です',
+      try {
+        const body = await c.req.json();
+
+        // CreateOrderユースケースを実行
+        const result = await createOrder(repository, productRepository)(body);
+
+        if (isErr(result)) {
+          const { type, message } = result.error;
+
+          // エラータイプに応じてHTTPステータスコードを決定
+          if (type === 'VALIDATION_ERROR') {
+            return c.json({ error: { type, message } }, 400);
+          }
+          if (type === 'PRODUCT_NOT_FOUND') {
+            return c.json({ error: { type, message } }, 400);
+          }
+          return c.json({ error: { type, message } }, 500);
+        }
+
+        return c.json(toOrderDto(result.value), 201);
+      } catch (error) {
+        return c.json(
+          {
+            error: {
+              type: 'UNKNOWN_ERROR',
+              message: error instanceof Error ? error.message : '予期しないエラーが発生しました',
+            },
           },
-        },
-        501
-      );
+          500
+        );
+      }
     },
 
     /**
      * GET /orders - 注文一覧を取得
      */
     getOrders: async (c: Context): Promise<JsonResponse> => {
-      // TODO: 実装予定
-      // 1. Repositoryから全注文を取得
-      // 2. DTOのリストに変換
-      // 3. レスポンス
-      return c.json(
-        {
-          error: {
-            type: 'NOT_IMPLEMENTED',
-            message: '注文一覧取得機能は未実装です',
+      try {
+        const result = await repository.findAll();
+
+        if (isErr(result)) {
+          const { type, message } = result.error;
+          return c.json({ error: { type, message } }, 500);
+        }
+
+        const orders = result.value.map(toOrderDto);
+        return c.json({ orders }, 200);
+      } catch (error) {
+        return c.json(
+          {
+            error: {
+              type: 'UNKNOWN_ERROR',
+              message: error instanceof Error ? error.message : '予期しないエラーが発生しました',
+            },
           },
-        },
-        501
-      );
+          500
+        );
+      }
     },
 
     /**
      * GET /orders/:id - 注文詳細を取得
      */
     getOrderById: async (c: Context): Promise<JsonResponse> => {
-      // TODO: 実装予定
-      // 1. パスパラメータからIDを取得
-      // 2. IDのバリデーション
-      // 3. Repositoryから注文を取得
-      // 4. 見つからない場合は404
-      // 5. DTOに変換してレスポンス
-      return c.json(
-        {
-          error: {
-            type: 'NOT_IMPLEMENTED',
-            message: '注文詳細取得機能は未実装です',
+      try {
+        const id = Number(c.req.param('id'));
+
+        if (isNaN(id) || id < 1) {
+          return c.json(
+            {
+              error: {
+                type: 'INVALID_PARAMETER',
+                message: '無効な注文IDです',
+              },
+            },
+            400
+          );
+        }
+
+        const result = await repository.findById(id);
+
+        if (isErr(result)) {
+          const { type, message } = result.error;
+
+          if (type === 'NOT_FOUND') {
+            return c.json({ error: { type, message } }, 404);
+          }
+          return c.json({ error: { type, message } }, 500);
+        }
+
+        return c.json(toOrderDto(result.value), 200);
+      } catch (error) {
+        return c.json(
+          {
+            error: {
+              type: 'UNKNOWN_ERROR',
+              message: error instanceof Error ? error.message : '予期しないエラーが発生しました',
+            },
           },
-        },
-        501
-      );
+          500
+        );
+      }
     },
 
     /**
      * PATCH /orders/:id/status - 注文ステータスを更新
      */
     updateOrderStatus: async (c: Context): Promise<JsonResponse> => {
-      // TODO: 実装予定
-      // 1. パスパラメータからIDを取得
-      // 2. リクエストボディから新しいステータスを取得
-      // 3. ステータス遷移のバリデーション
-      //    (例: DELIVERED -> PENDING は不可)
-      // 4. Repositoryでステータス更新
-      // 5. DTOに変換してレスポンス
-      return c.json(
-        {
-          error: {
-            type: 'NOT_IMPLEMENTED',
-            message: '注文ステータス更新機能は未実装です',
+      try {
+        const id = Number(c.req.param('id'));
+        const body = await c.req.json();
+        const { shippingStatus } = body;
+
+        if (isNaN(id) || id < 1) {
+          return c.json(
+            {
+              error: {
+                type: 'INVALID_PARAMETER',
+                message: '無効な注文IDです',
+              },
+            },
+            400
+          );
+        }
+
+        if (!shippingStatus || !['PENDING', 'SHIPPED', 'DELIVERED'].includes(shippingStatus)) {
+          return c.json(
+            {
+              error: {
+                type: 'INVALID_PARAMETER',
+                message: '無効な配送ステータスです',
+              },
+            },
+            400
+          );
+        }
+
+        const result = await repository.updateStatus(id, shippingStatus);
+
+        if (isErr(result)) {
+          const { type, message } = result.error;
+
+          if (type === 'NOT_FOUND') {
+            return c.json({ error: { type, message } }, 404);
+          }
+          if (type === 'CONFLICT') {
+            return c.json({ error: { type, message } }, 409);
+          }
+          return c.json({ error: { type, message } }, 500);
+        }
+
+        return c.json(toOrderDto(result.value), 200);
+      } catch (error) {
+        return c.json(
+          {
+            error: {
+              type: 'UNKNOWN_ERROR',
+              message: error instanceof Error ? error.message : '予期しないエラーが発生しました',
+            },
           },
-        },
-        501
-      );
+          500
+        );
+      }
     },
 
     /**
      * DELETE /orders/:id - 注文をキャンセル
      */
     cancelOrder: async (c: Context): Promise<Response> => {
-      // TODO: 実装予定
-      // 1. パスパラメータからIDを取得
-      // 2. 注文を取得
-      // 3. キャンセル可能かチェック
-      //    (DELIVERED状態ならキャンセル不可 -> 409 Conflict)
-      // 4. Repositoryで削除
-      // 5. 204 No Content
-      return c.json(
-        {
-          error: {
-            type: 'NOT_IMPLEMENTED',
-            message: '注文キャンセル機能は未実装です',
+      try {
+        const id = Number(c.req.param('id'));
+
+        if (isNaN(id) || id < 1) {
+          return c.json(
+            {
+              error: {
+                type: 'INVALID_PARAMETER',
+                message: '無効な注文IDです',
+              },
+            },
+            400
+          );
+        }
+
+        const result = await repository.delete(id);
+
+        if (isErr(result)) {
+          const { type, message } = result.error;
+
+          if (type === 'NOT_FOUND') {
+            return c.json({ error: { type, message } }, 404);
+          }
+          if (type === 'CONFLICT') {
+            return c.json({ error: { type, message } }, 409);
+          }
+          return c.json({ error: { type, message } }, 500);
+        }
+
+        return c.body(null, 204);
+      } catch (error) {
+        return c.json(
+          {
+            error: {
+              type: 'UNKNOWN_ERROR',
+              message: error instanceof Error ? error.message : '予期しないエラーが発生しました',
+            },
           },
-        },
-        501
-      );
+          500
+        );
+      }
     },
   };
 };

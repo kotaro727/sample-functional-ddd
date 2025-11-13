@@ -1,5 +1,6 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import { OrderRepository } from '@application/ports/orderRepository';
+import { ProductRepository } from '@application/ports/productRepository';
 import { createOrderController } from '@presentation/api/controllers/orderController';
 
 // 共通エラーレスポンススキーマ
@@ -349,9 +350,12 @@ const cancelOrderRoute = createRoute({
 /**
  * 注文関連のルーティングを作成
  */
-export const createOrderRoutes = (repository: OrderRepository) => {
+export const createOrderRoutes = (
+  repository: OrderRepository,
+  productRepository: ProductRepository
+) => {
   const router = new OpenAPIHono();
-  const controller = createOrderController(repository);
+  const controller = createOrderController(repository, productRepository);
 
   router.openapi(createOrderRoute, controller.createOrder);
   router.openapi(getOrdersRoute, controller.getOrders);
