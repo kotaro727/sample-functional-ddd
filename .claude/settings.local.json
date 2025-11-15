@@ -7,11 +7,18 @@
       "Bash(~/.bun/bin/bun test:*)",
       "Bash(~/.bun/bin/bun add:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)",
       "Bash(~/.bun/bin/bun run typecheck:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(bun test:*)",
+      "Bash(bun run openapi:generate:*)",
+      "Bash(~/.bun/bin/bun run openapi:generate:*)"
     ],
     "deny": [],
-    "ask": []
+    "ask": [
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git reset:*)",
+      "Bash(git rebase:*)"
+    ]
   }
 }
