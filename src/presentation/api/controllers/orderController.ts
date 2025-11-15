@@ -3,7 +3,16 @@ import { OrderRepository } from '@application/ports/orderRepository';
 import { ProductRepository } from '@application/ports/productRepository';
 import { createOrder } from '@application/order/createOrder';
 import { isErr } from '@shared/functional/result';
-import { PersistedValidatedOrder } from '@domain/order/order';
+import {
+  toCreateOrderRequest,
+  toOrderDto,
+  type CreateOrderRequestDto,
+} from '@presentation/api/dto/orderDto';
+import {
+  handleUnknownError,
+  createErrorResponse,
+  parseOrderId,
+} from '@presentation/api/helpers/errorHelpers';
 
 /**
  * OrderController
@@ -20,22 +29,6 @@ export type OrderController = {
 };
 
 /**
- * PersistedValidatedOrderをDTO形式に変換
- */
-const toOrderDto = (order: PersistedValidatedOrder) => ({
-  id: order.id,
-  orderItems: order.orderItems.map((item) => ({
-    productId: item.productId,
-    quantity: item.quantity,
-  })),
-  shippingAddress: order.shippingAddress,
-  customerInfo: order.customerInfo,
-  shippingStatus: order.shippingStatus,
-  totalAmount: order.totalAmount,
-  createdAt: order.createdAt.toISOString(),
-});
-
-/**
  * OrderControllerを作成
  */
 export const createOrderController = (
@@ -48,35 +41,25 @@ export const createOrderController = (
      */
     createOrder: async (c: Context): Promise<JsonResponse> => {
       try {
-        const body = await c.req.json();
+        // OpenAPIで検証済みのリクエストボディを取得
+        const body = (await c.req.json()) as CreateOrderRequestDto;
+
+        // DTO → Application層の型に変換
+        const requestResult = toCreateOrderRequest(body);
+        if (isErr(requestResult)) {
+          return createErrorResponse(c, requestResult.error);
+        }
 
         // CreateOrderユースケースを実行
-        const result = await createOrder(repository, productRepository)(body);
+        const result = await createOrder(repository, productRepository)(requestResult.value);
 
         if (isErr(result)) {
-          const { type, message } = result.error;
-
-          // エラータイプに応じてHTTPステータスコードを決定
-          if (type === 'VALIDATION_ERROR') {
-            return c.json({ error: { type, message } }, 400);
-          }
-          if (type === 'PRODUCT_NOT_FOUND') {
-            return c.json({ error: { type, message } }, 400);
-          }
-          return c.json({ error: { type, message } }, 500);
+          return createErrorResponse(c, result.error);
         }
 
         return c.json(toOrderDto(result.value), 201);
       } catch (error) {
-        return c.json(
-          {
-            error: {
-              type: 'UNKNOWN_ERROR',
-              message: error instanceof Error ? error.message : '予期しないエラーが発生しました',
-            },
-          },
-          500
-        );
+        return handleUnknownError(c, error);
       }
     },
 
@@ -88,22 +71,13 @@ export const createOrderController = (
         const result = await repository.findAll();
 
         if (isErr(result)) {
-          const { type, message } = result.error;
-          return c.json({ error: { type, message } }, 500);
+          return createErrorResponse(c, result.error);
         }
 
         const orders = result.value.map(toOrderDto);
         return c.json({ orders }, 200);
       } catch (error) {
-        return c.json(
-          {
-            error: {
-              type: 'UNKNOWN_ERROR',
-              message: error instanceof Error ? error.message : '予期しないエラーが発生しました',
-            },
-          },
-          500
-        );
+        return handleUnknownError(c, error);
       }
     },
 
@@ -112,42 +86,21 @@ export const createOrderController = (
      */
     getOrderById: async (c: Context): Promise<JsonResponse> => {
       try {
-        const id = Number(c.req.param('id'));
-
-        if (isNaN(id) || id < 1) {
-          return c.json(
-            {
-              error: {
-                type: 'INVALID_PARAMETER',
-                message: '無効な注文IDです',
-              },
-            },
-            400
-          );
+        // IDパラメータをパースして検証
+        const idResult = parseOrderId(c.req.param('id'));
+        if (isErr(idResult)) {
+          return createErrorResponse(c, idResult.error);
         }
 
-        const result = await repository.findById(id);
+        const result = await repository.findById(idResult.value);
 
         if (isErr(result)) {
-          const { type, message } = result.error;
-
-          if (type === 'NOT_FOUND') {
-            return c.json({ error: { type, message } }, 404);
-          }
-          return c.json({ error: { type, message } }, 500);
+          return createErrorResponse(c, result.error);
         }
 
         return c.json(toOrderDto(result.value), 200);
       } catch (error) {
-        return c.json(
-          {
-            error: {
-              type: 'UNKNOWN_ERROR',
-              message: error instanceof Error ? error.message : '予期しないエラーが発生しました',
-            },
-          },
-          500
-        );
+        return handleUnknownError(c, error);
       }
     },
 
@@ -156,59 +109,32 @@ export const createOrderController = (
      */
     updateOrderStatus: async (c: Context): Promise<JsonResponse> => {
       try {
-        const id = Number(c.req.param('id'));
+        // IDパラメータをパースして検証
+        const idResult = parseOrderId(c.req.param('id'));
+        if (isErr(idResult)) {
+          return createErrorResponse(c, idResult.error);
+        }
+
         const body = await c.req.json();
         const { shippingStatus } = body;
 
-        if (isNaN(id) || id < 1) {
-          return c.json(
-            {
-              error: {
-                type: 'INVALID_PARAMETER',
-                message: '無効な注文IDです',
-              },
-            },
-            400
-          );
-        }
-
+        // 配送ステータスのバリデーション
         if (!shippingStatus || !['PENDING', 'SHIPPED', 'DELIVERED'].includes(shippingStatus)) {
-          return c.json(
-            {
-              error: {
-                type: 'INVALID_PARAMETER',
-                message: '無効な配送ステータスです',
-              },
-            },
-            400
-          );
+          return createErrorResponse(c, {
+            type: 'INVALID_PARAMETER',
+            message: '無効な配送ステータスです',
+          });
         }
 
-        const result = await repository.updateStatus(id, shippingStatus);
+        const result = await repository.updateStatus(idResult.value, shippingStatus);
 
         if (isErr(result)) {
-          const { type, message } = result.error;
-
-          if (type === 'NOT_FOUND') {
-            return c.json({ error: { type, message } }, 404);
-          }
-          if (type === 'CONFLICT') {
-            return c.json({ error: { type, message } }, 409);
-          }
-          return c.json({ error: { type, message } }, 500);
+          return createErrorResponse(c, result.error);
         }
 
         return c.json(toOrderDto(result.value), 200);
       } catch (error) {
-        return c.json(
-          {
-            error: {
-              type: 'UNKNOWN_ERROR',
-              message: error instanceof Error ? error.message : '予期しないエラーが発生しました',
-            },
-          },
-          500
-        );
+        return handleUnknownError(c, error);
       }
     },
 
@@ -217,45 +143,21 @@ export const createOrderController = (
      */
     cancelOrder: async (c: Context): Promise<Response> => {
       try {
-        const id = Number(c.req.param('id'));
-
-        if (isNaN(id) || id < 1) {
-          return c.json(
-            {
-              error: {
-                type: 'INVALID_PARAMETER',
-                message: '無効な注文IDです',
-              },
-            },
-            400
-          );
+        // IDパラメータをパースして検証
+        const idResult = parseOrderId(c.req.param('id'));
+        if (isErr(idResult)) {
+          return createErrorResponse(c, idResult.error);
         }
 
-        const result = await repository.delete(id);
+        const result = await repository.delete(idResult.value);
 
         if (isErr(result)) {
-          const { type, message } = result.error;
-
-          if (type === 'NOT_FOUND') {
-            return c.json({ error: { type, message } }, 404);
-          }
-          if (type === 'CONFLICT') {
-            return c.json({ error: { type, message } }, 409);
-          }
-          return c.json({ error: { type, message } }, 500);
+          return createErrorResponse(c, result.error);
         }
 
         return c.body(null, 204);
       } catch (error) {
-        return c.json(
-          {
-            error: {
-              type: 'UNKNOWN_ERROR',
-              message: error instanceof Error ? error.message : '予期しないエラーが発生しました',
-            },
-          },
-          500
-        );
+        return handleUnknownError(c, error);
       }
     },
   };
