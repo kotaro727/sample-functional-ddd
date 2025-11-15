@@ -65,12 +65,8 @@ export const createApp = (options: CreateAppOptions = {}) => {
   app.route('/api', createProductRoutes(productRepository));
   app.route('/api', createOrderRoutes(orderRepository, productRepository));
 
-  app.doc('/doc', {
-    openapi: openapiDocument.openapi ?? '3.0.3',
-    info: openapiDocument.info,
-    servers: openapiDocument.servers,
-    tags: openapiDocument.tags,
-  });
+  // OpenAPI仕様書をそのまま返す（YAMLファイルの完全な内容を使用）
+  app.get('/doc', (c) => c.json(openapiDocument));
   app.get('/api-docs', swaggerUI({ url: '/doc' }));
 
   app.notFound((c) => c.json({ error: 'Not Found' }, 404));

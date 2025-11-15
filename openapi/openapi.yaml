@@ -17,8 +17,184 @@ tags:
     description: 商品関連のAPI
   - name: orders
     description: 注文関連のAPI
+  - name: auth
+    description: 認証関連のAPI
+  - name: users
+    description: ユーザー関連のAPI
 
 paths:
+  /api/auth/register:
+    post:
+      summary: ユーザー登録
+      description: 新しいユーザーを登録します
+      operationId: register
+      tags:
+        - auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+            example:
+              email: "user@example.com"
+              password: "password123"
+      responses:
+        '201':
+          description: ユーザー登録成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: バリデーションエラーまたはメールアドレスが既に使用されている
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                validationError:
+                  value:
+                    error:
+                      type: VALIDATION_ERROR
+                      message: メールアドレスの形式が正しくありません
+                emailConflict:
+                  value:
+                    error:
+                      type: CONFLICT
+                      message: このメールアドレスは既に使用されています
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/auth/login:
+    post:
+      summary: ログイン
+      description: メールアドレスとパスワードでログインします
+      operationId: login
+      tags:
+        - auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              email: "user@example.com"
+              password: "password123"
+      responses:
+        '200':
+          description: ログイン成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: 認証失敗（メールアドレスまたはパスワードが間違っています）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error:
+                  type: AUTHENTICATION_ERROR
+                  message: メールアドレスまたはパスワードが間違っています
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/users/me:
+    get:
+      summary: 自分のプロフィール取得
+      description: 認証されたユーザーのプロフィール情報を取得します
+      operationId: getProfile
+      tags:
+        - users
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: プロフィール取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDto'
+        '401':
+          description: 認証エラー（トークンが無効または期限切れ）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error:
+                  type: AUTHENTICATION_ERROR
+                  message: 認証トークンが無効です
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      summary: プロフィール更新
+      description: 認証されたユーザーのプロフィール情報を更新します
+      operationId: updateProfile
+      tags:
+        - users
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileRequest'
+            example:
+              name: "山田太郎"
+              address:
+                postalCode: "100-0001"
+                prefecture: "東京都"
+                city: "千代田区"
+                addressLine: "千代田1-1-1"
+              phone: "090-1234-5678"
+      responses:
+        '200':
+          description: プロフィール更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDto'
+        '400':
+          description: バリデーションエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error:
+                  type: VALIDATION_ERROR
+                  message: 郵便番号の形式が正しくありません
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /api/products:
     get:
       summary: 商品一覧を取得
@@ -104,12 +280,49 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
 
   /api/orders:
+    get:
+      summary: 注文一覧を取得
+      description: 認証されたユーザーの注文一覧を取得します（自分の注文のみ）
+      operationId: getOrders
+      tags:
+        - orders
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 注文一覧の取得に成功
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - orders
+                properties:
+                  orders:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/OrderDto'
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
     post:
       summary: 注文を作成
-      description: 新しい注文を作成します
+      description: 認証されたユーザーの新しい注文を作成します（住所・顧客情報はリクエストボディから取得）
       operationId: createOrder
       tags:
         - orders
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -163,7 +376,160 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
 
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: 'JWTトークンによる認証。ヘッダーに "Authorization: Bearer {token}" を含めてください。'
+
   schemas:
+    UserDto:
+      type: object
+      required:
+        - id
+        - email
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: integer
+          format: int32
+          description: ユーザーID
+          example: 1
+        email:
+          type: string
+          format: email
+          description: メールアドレス
+          example: "user@example.com"
+        profile:
+          type: object
+          nullable: true
+          description: ユーザープロフィール（未登録の場合はnull）
+          required:
+            - name
+            - address
+            - phone
+          properties:
+            name:
+              type: string
+              minLength: 1
+              description: 名前
+              example: "山田太郎"
+            address:
+              $ref: '#/components/schemas/AddressDto'
+            phone:
+              type: string
+              pattern: '^\d{2,4}-\d{2,4}-\d{4}$'
+              description: 電話番号（XX-XXXX-XXXX形式）
+              example: "090-1234-5678"
+        createdAt:
+          type: string
+          format: date-time
+          description: 作成日時
+          example: "2024-01-01T00:00:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          description: 更新日時
+          example: "2024-01-01T00:00:00Z"
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          description: メールアドレス
+          example: "user@example.com"
+        password:
+          type: string
+          minLength: 8
+          description: パスワード（8文字以上）
+          example: "password123"
+
+    RegisterRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          description: メールアドレス
+          example: "user@example.com"
+        password:
+          type: string
+          minLength: 8
+          description: パスワード（8文字以上）
+          example: "password123"
+
+    AuthResponse:
+      type: object
+      required:
+        - user
+        - token
+      properties:
+        user:
+          $ref: '#/components/schemas/UserDto'
+        token:
+          type: string
+          description: JWTトークン
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+
+    UpdateProfileRequest:
+      type: object
+      required:
+        - name
+        - address
+        - phone
+      properties:
+        name:
+          type: string
+          minLength: 1
+          description: 名前
+          example: "山田太郎"
+        address:
+          $ref: '#/components/schemas/AddressDto'
+        phone:
+          type: string
+          pattern: '^\d{2,4}-\d{2,4}-\d{4}$'
+          description: 電話番号（XX-XXXX-XXXX形式）
+          example: "090-1234-5678"
+
+    AddressDto:
+      type: object
+      required:
+        - postalCode
+        - prefecture
+        - city
+        - addressLine
+      properties:
+        postalCode:
+          type: string
+          pattern: '^\d{3}-\d{4}$'
+          description: 郵便番号（XXX-XXXX形式）
+          example: "100-0001"
+        prefecture:
+          type: string
+          minLength: 1
+          description: 都道府県
+          example: "東京都"
+        city:
+          type: string
+          minLength: 1
+          description: 市区町村
+          example: "千代田区"
+        addressLine:
+          type: string
+          minLength: 1
+          description: 番地・建物名
+          example: "千代田1-1-1"
+
     ProductDto:
       type: object
       required:
@@ -279,6 +645,7 @@ components:
       type: object
       required:
         - id
+        - userId
         - orderItems
         - shippingAddress
         - customerInfo
@@ -290,6 +657,11 @@ components:
           type: integer
           format: int32
           description: 注文ID
+          example: 1
+        userId:
+          type: integer
+          format: int32
+          description: ユーザーID
           example: 1
         orderItems:
           type: array
