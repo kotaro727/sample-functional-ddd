@@ -4,13 +4,19 @@ import { ProductListPage } from './pages/ProductListPage';
 import { ProductDetailPage } from './pages/ProductDetailPage';
 import { CartPage } from './pages/CartPage';
 import { OrderHistoryPage } from './pages/OrderHistoryPage';
+import { LoginPage } from './pages/LoginPage';
+import { RegisterPage } from './pages/RegisterPage';
+import { ProfilePage } from './pages/ProfilePage';
 import { CartProvider, useCartContext } from './contexts/CartContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ProtectedRoute } from './components/ProtectedRoute';
 
 /**
  * ヘッダーコンポーネント（ハンバーガーメニュー付き）
  */
 const Header: React.FC = () => {
   const { getTotalItems } = useCartContext();
+  const { user, isAuthenticated, logout } = useAuth();
   const totalItems = getTotalItems();
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -39,21 +45,59 @@ const Header: React.FC = () => {
           </div>
         </div>
 
-        <Link
-          to="/cart"
-          style={{
-            padding: '0.5rem 1rem',
-            backgroundColor: '#2c5aa0',
-            color: 'white',
-            textDecoration: 'none',
-            borderRadius: '4px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem'
-          }}
-        >
-          🛒 カート {totalItems > 0 && `(${totalItems})`}
-        </Link>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <Link
+            to="/cart"
+            style={{
+              padding: '0.5rem 1rem',
+              backgroundColor: '#2c5aa0',
+              color: 'white',
+              textDecoration: 'none',
+              borderRadius: '4px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}
+          >
+            🛒 カート {totalItems > 0 && `(${totalItems})`}
+          </Link>
+
+          {isAuthenticated ? (
+            <>
+              <span style={{ fontSize: '14px', color: '#666' }}>
+                {user?.email}
+              </span>
+              <button
+                onClick={logout}
+                style={{
+                  padding: '0.5rem 1rem',
+                  backgroundColor: '#dc3545',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '14px'
+                }}
+              >
+                ログアウト
+              </button>
+            </>
+          ) : (
+            <Link
+              to="/login"
+              style={{
+                padding: '0.5rem 1rem',
+                backgroundColor: '#28a745',
+                color: 'white',
+                textDecoration: 'none',
+                borderRadius: '4px',
+                fontSize: '14px'
+              }}
+            >
+              ログイン
+            </Link>
+          )}
+        </div>
       </div>
 
       {/* ドロップダウンメニュー */}
@@ -84,19 +128,36 @@ const Header: React.FC = () => {
           >
             📦 商品一覧
           </Link>
-          <Link
-            to="/orders"
-            onClick={() => setMenuOpen(false)}
-            style={{
-              display: 'block',
-              padding: '1rem',
-              textDecoration: 'none',
-              color: '#333',
-              borderBottom: '1px solid #eee'
-            }}
-          >
-            📋 注文済み商品
-          </Link>
+          {isAuthenticated && (
+            <>
+              <Link
+                to="/profile"
+                onClick={() => setMenuOpen(false)}
+                style={{
+                  display: 'block',
+                  padding: '1rem',
+                  textDecoration: 'none',
+                  color: '#333',
+                  borderBottom: '1px solid #eee'
+                }}
+              >
+                👤 プロフィール
+              </Link>
+              <Link
+                to="/orders"
+                onClick={() => setMenuOpen(false)}
+                style={{
+                  display: 'block',
+                  padding: '1rem',
+                  textDecoration: 'none',
+                  color: '#333',
+                  borderBottom: '1px solid #eee'
+                }}
+              >
+                📋 注文済み商品
+              </Link>
+            </>
+          )}
           <Link
             to="/cart"
             onClick={() => setMenuOpen(false)}
@@ -121,20 +182,39 @@ const Header: React.FC = () => {
 export const App: React.FC = () => {
   return (
     <BrowserRouter>
-      <CartProvider>
-        <div>
-          <Header />
-          <main style={{ padding: '1rem' }}>
-            <Routes>
-              <Route path="/" element={<ProductListPage />} />
-              <Route path="/products" element={<ProductListPage />} />
-              <Route path="/products/:id" element={<ProductDetailPage />} />
-              <Route path="/cart" element={<CartPage />} />
-              <Route path="/orders" element={<OrderHistoryPage />} />
-            </Routes>
-          </main>
-        </div>
-      </CartProvider>
+      <AuthProvider>
+        <CartProvider>
+          <div>
+            <Header />
+            <main style={{ padding: '1rem' }}>
+              <Routes>
+                <Route path="/" element={<ProductListPage />} />
+                <Route path="/products" element={<ProductListPage />} />
+                <Route path="/products/:id" element={<ProductDetailPage />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/register" element={<RegisterPage />} />
+                <Route
+                  path="/profile"
+                  element={
+                    <ProtectedRoute>
+                      <ProfilePage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route path="/cart" element={<CartPage />} />
+                <Route
+                  path="/orders"
+                  element={
+                    <ProtectedRoute>
+                      <OrderHistoryPage />
+                    </ProtectedRoute>
+                  }
+                />
+              </Routes>
+            </main>
+          </div>
+        </CartProvider>
+      </AuthProvider>
     </BrowserRouter>
   );
 };

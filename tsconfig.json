@@ -35,11 +35,13 @@
     // パスエイリアス
     "baseUrl": ".",
     "paths": {
+      "@/*": ["src/*"],
       "@domain/*": ["src/domain/*"],
       "@application/*": ["src/application/*"],
       "@infrastructure/*": ["src/infrastructure/*"],
       "@presentation/*": ["src/presentation/*"],
-      "@shared/*": ["src/shared/*"]
+      "@shared/*": ["src/shared/*"],
+      "@generated/*": ["src/generated/*"]
     }
   },
   "include": ["src/**/*"],
