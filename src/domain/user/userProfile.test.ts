@@ -23,12 +23,12 @@ describe('UserProfile値オブジェクト', () => {
       const result = validateUserProfile(unvalidated);
       expect(isOk(result)).toBe(true);
       if (isOk(result)) {
-        expect(result.value.name).toBe('山田太郎');
-        expect(result.value.address.postalCode).toBe('123-4567'); // 正規化される
-        expect(result.value.address.prefecture).toBe('東京都');
-        expect(result.value.address.city).toBe('渋谷区');
-        expect(result.value.address.addressLine).toBe('渋谷1-2-3');
-        expect(result.value.phone).toBe('090-1234-5678'); // 正規化される
+        expect(result.value.name.value).toBe('山田太郎');
+        expect(result.value.address.postalCode.value).toBe('123-4567'); // 正規化される
+        expect(result.value.address.prefecture.value).toBe('東京都');
+        expect(result.value.address.city.value).toBe('渋谷区');
+        expect(result.value.address.addressLine.value).toBe('渋谷1-2-3');
+        expect(result.value.phone.value).toBe('090-1234-5678'); // 正規化される
       }
     });
 
@@ -47,8 +47,8 @@ describe('UserProfile値オブジェクト', () => {
       const result = validateUserProfile(unvalidated);
       expect(isOk(result)).toBe(true);
       if (isOk(result)) {
-        expect(result.value.address.postalCode).toBe('123-4567');
-        expect(result.value.phone).toBe('080-9876-5432');
+        expect(result.value.address.postalCode.value).toBe('123-4567');
+        expect(result.value.phone.value).toBe('080-9876-5432');
       }
     });
 
@@ -67,7 +67,7 @@ describe('UserProfile値オブジェクト', () => {
       const result = validateUserProfile(unvalidated);
       expect(isErr(result)).toBe(true);
       if (isErr(result)) {
-        expect(result.error.type).toBe('EMPTY_FIELD');
+        expect(result.error.type).toBe('EMPTY_NAME');
         expect(result.error.message).toContain('名前');
       }
     });
@@ -87,7 +87,7 @@ describe('UserProfile値オブジェクト', () => {
       const result = validateUserProfile(unvalidated);
       expect(isErr(result)).toBe(true);
       if (isErr(result)) {
-        expect(result.error.type).toBe('EMPTY_FIELD');
+        expect(result.error.type).toBe('EMPTY_NAME');
       }
     });
 
@@ -125,7 +125,7 @@ describe('UserProfile値オブジェクト', () => {
       const result = validateUserProfile(unvalidated);
       expect(isErr(result)).toBe(true);
       if (isErr(result)) {
-        expect(result.error.type).toBe('EMPTY_FIELD');
+        expect(result.error.type).toBe('EMPTY_PREFECTURE');
         expect(result.error.message).toContain('都道府県');
       }
     });
@@ -145,7 +145,7 @@ describe('UserProfile値オブジェクト', () => {
       const result = validateUserProfile(unvalidated);
       expect(isErr(result)).toBe(true);
       if (isErr(result)) {
-        expect(result.error.type).toBe('EMPTY_FIELD');
+        expect(result.error.type).toBe('EMPTY_CITY');
         expect(result.error.message).toContain('市区町村');
       }
     });
@@ -165,7 +165,7 @@ describe('UserProfile値オブジェクト', () => {
       const result = validateUserProfile(unvalidated);
       expect(isErr(result)).toBe(true);
       if (isErr(result)) {
-        expect(result.error.type).toBe('EMPTY_FIELD');
+        expect(result.error.type).toBe('EMPTY_ADDRESS_LINE');
         expect(result.error.message).toContain('町名番地');
       }
     });

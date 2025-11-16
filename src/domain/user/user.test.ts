@@ -68,12 +68,12 @@ describe('Userエンティティ', () => {
           const updatedUser = updateProfile(user, profileResult.value);
 
           expect(updatedUser.profile).not.toBeNull();
-          expect(updatedUser.profile?.name).toBe('山田太郎');
-          expect(updatedUser.profile?.address.postalCode).toBe('123-4567');
-          expect(updatedUser.profile?.address.prefecture).toBe('東京都');
-          expect(updatedUser.profile?.address.city).toBe('渋谷区');
-          expect(updatedUser.profile?.address.addressLine).toBe('渋谷1-2-3');
-          expect(updatedUser.profile?.phone).toBe('090-1234-5678');
+          expect(updatedUser.profile?.name.value).toBe('山田太郎');
+          expect(updatedUser.profile?.address.postalCode.value).toBe('123-4567');
+          expect(updatedUser.profile?.address.prefecture.value).toBe('東京都');
+          expect(updatedUser.profile?.address.city.value).toBe('渋谷区');
+          expect(updatedUser.profile?.address.addressLine.value).toBe('渋谷1-2-3');
+          expect(updatedUser.profile?.phone.value).toBe('090-1234-5678');
         }
       }
     });
@@ -150,7 +150,7 @@ describe('Userエンティティ', () => {
 
         if (isOk(profile1Result)) {
           const updatedUser1 = updateProfile(user, profile1Result.value);
-          expect(updatedUser1.profile?.name).toBe('山田太郎');
+          expect(updatedUser1.profile?.name.value).toBe('山田太郎');
 
           // 2回目の更新
           const profile2Result = validateUserProfile({
@@ -166,8 +166,8 @@ describe('Userエンティティ', () => {
 
           if (isOk(profile2Result)) {
             const updatedUser2 = updateProfile(updatedUser1, profile2Result.value);
-            expect(updatedUser2.profile?.name).toBe('佐藤花子');
-            expect(updatedUser2.profile?.address.prefecture).toBe('大阪府');
+            expect(updatedUser2.profile?.name.value).toBe('佐藤花子');
+            expect(updatedUser2.profile?.address.prefecture.value).toBe('大阪府');
           }
         }
       }
