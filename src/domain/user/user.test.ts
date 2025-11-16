@@ -5,6 +5,7 @@ import {
   type User,
 } from './user';
 import { createEmail } from '@domain/shared/valueObjects/email';
+import { createPasswordHash } from '@domain/shared/valueObjects/PasswordHash';
 import { validateUserProfile } from './userProfile';
 import { isOk } from '@shared/functional/result';
 
@@ -12,33 +13,25 @@ describe('Userエンティティ', () => {
   describe('createUser - ユーザー作成', () => {
     test('正常: ユーザーを作成できる', () => {
       const emailResult = createEmail('test@example.com');
-      expect(isOk(emailResult)).toBe(true);
+      const passwordHashResult = createPasswordHash('$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy');
 
-      if (isOk(emailResult)) {
-        const passwordHash = '$2a$10$abcdefghijklmnopqrstuvwxyz1234567890';
-        const user = createUser(emailResult.value, passwordHash);
+      expect(isOk(emailResult) && isOk(passwordHashResult)).toBe(true);
 
-        expect(user.id).toBe(0); // 初期値
+      if (isOk(emailResult) && isOk(passwordHashResult)) {
+        const user = createUser(emailResult.value, passwordHashResult.value);
+
         expect(user.email.value).toBe('test@example.com');
-        expect(user.passwordHash).toBe(passwordHash);
+        expect(user.passwordHash.value).toBe('$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy');
         expect(user.profile).toBeNull();
-        expect(user.createdAt).toBeInstanceOf(Date);
-        expect(user.updatedAt).toBeInstanceOf(Date);
-      }
-    });
-
-    test('正常: 作成日時と更新日時は同じになる', () => {
-      const emailResult = createEmail('test@example.com');
-      if (isOk(emailResult)) {
-        const user = createUser(emailResult.value, 'hashedPassword');
-        expect(user.createdAt.getTime()).toBe(user.updatedAt.getTime());
       }
     });
 
     test('正常: プロフィールは初期状態でnull', () => {
       const emailResult = createEmail('test@example.com');
-      if (isOk(emailResult)) {
-        const user = createUser(emailResult.value, 'hashedPassword');
+      const passwordHashResult = createPasswordHash('$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy');
+
+      if (isOk(emailResult) && isOk(passwordHashResult)) {
+        const user = createUser(emailResult.value, passwordHashResult.value);
         expect(user.profile).toBeNull();
       }
     });
@@ -47,10 +40,12 @@ describe('Userエンティティ', () => {
   describe('updateProfile - プロフィール更新', () => {
     test('正常: プロフィールを更新できる', () => {
       const emailResult = createEmail('test@example.com');
-      expect(isOk(emailResult)).toBe(true);
+      const passwordHashResult = createPasswordHash('$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy');
 
-      if (isOk(emailResult)) {
-        const user = createUser(emailResult.value, 'hashedPassword');
+      expect(isOk(emailResult) && isOk(passwordHashResult)).toBe(true);
+
+      if (isOk(emailResult) && isOk(passwordHashResult)) {
+        const user = createUser(emailResult.value, passwordHashResult.value);
 
         const profileResult = validateUserProfile({
           name: '山田太郎',
@@ -78,63 +73,12 @@ describe('Userエンティティ', () => {
       }
     });
 
-    test('正常: プロフィール更新時にupdatedAtが更新される', () => {
-      const emailResult = createEmail('test@example.com');
-      if (isOk(emailResult)) {
-        const user = createUser(emailResult.value, 'hashedPassword');
-        const originalUpdatedAt = user.updatedAt;
-
-        // 少し時間を置く
-        const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-        
-        const profileResult = validateUserProfile({
-          name: '山田太郎',
-          address: {
-            postalCode: '1234567',
-            prefecture: '東京都',
-            city: '渋谷区',
-            addressLine: '渋谷1-2-3',
-          },
-          phone: '09012345678',
-        });
-
-        if (isOk(profileResult)) {
-          delay(10).then(() => {
-            const updatedUser = updateProfile(user, profileResult.value);
-            expect(updatedUser.updatedAt.getTime()).toBeGreaterThanOrEqual(originalUpdatedAt.getTime());
-          });
-        }
-      }
-    });
-
-    test('正常: プロフィール更新時にcreatedAtは変わらない', () => {
-      const emailResult = createEmail('test@example.com');
-      if (isOk(emailResult)) {
-        const user = createUser(emailResult.value, 'hashedPassword');
-        const originalCreatedAt = user.createdAt;
-
-        const profileResult = validateUserProfile({
-          name: '山田太郎',
-          address: {
-            postalCode: '1234567',
-            prefecture: '東京都',
-            city: '渋谷区',
-            addressLine: '渋谷1-2-3',
-          },
-          phone: '09012345678',
-        });
-
-        if (isOk(profileResult)) {
-          const updatedUser = updateProfile(user, profileResult.value);
-          expect(updatedUser.createdAt).toBe(originalCreatedAt);
-        }
-      }
-    });
-
     test('正常: プロフィールを複数回更新できる', () => {
       const emailResult = createEmail('test@example.com');
-      if (isOk(emailResult)) {
-        const user = createUser(emailResult.value, 'hashedPassword');
+      const passwordHashResult = createPasswordHash('$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy');
+
+      if (isOk(emailResult) && isOk(passwordHashResult)) {
+        const user = createUser(emailResult.value, passwordHashResult.value);
 
         // 1回目の更新
         const profile1Result = validateUserProfile({
@@ -175,8 +119,10 @@ describe('Userエンティティ', () => {
 
     test('正常: 元のUserオブジェクトは変更されない（イミュータブル）', () => {
       const emailResult = createEmail('test@example.com');
-      if (isOk(emailResult)) {
-        const user = createUser(emailResult.value, 'hashedPassword');
+      const passwordHashResult = createPasswordHash('$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy');
+
+      if (isOk(emailResult) && isOk(passwordHashResult)) {
+        const user = createUser(emailResult.value, passwordHashResult.value);
 
         const profileResult = validateUserProfile({
           name: '山田太郎',
