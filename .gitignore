@@ -42,3 +42,8 @@ src/generated/
 # SQLite database files
 data/*.db
 data/*.db-*
+
+# Playwright
+test-results/
+playwright-report/
+playwright/.auth/
