@@ -2,6 +2,11 @@
 
 指定されたファイルまたはディレクトリを関数型プログラミングとドメイン駆動設計の観点からレビューします。
 
+## DDDの重要概念
+
+レビューを行う前に、以下のDDD概念を理解してください:
+- [集約（Aggregate）](../../docs/集約.md): 整合性とトランザクションの境界
+
 ## レビュー項目
 
 ### 1. プリミティブ型の濫用（Primitive Obsession）
@@ -110,6 +115,66 @@ export type User = {
   readonly id: number;  // 永続化の関心事
   readonly email: Email;
   readonly createdAt: Date;  // 永続化の関心事
+};
+```
+
+### 4.5. 集約の設計（Aggregate Design）
+
+**チェック内容:**
+- 集約ルートが明確に定義されているか
+- 集約の境界が適切に設定されているか
+- 集約内のオブジェクトへの変更が集約ルートを経由しているか
+- 集約が整合性の境界として機能しているか
+- 集約が適切なサイズ（小さすぎず大きすぎず）か
+- 集約間の参照がIDで行われているか
+
+詳細は [集約の説明](../../docs/集約.md) を参照してください。
+
+**良い例:**
+```typescript
+// 集約ルート: Order
+export type Order = {
+  readonly _tag: 'Order';
+  readonly customerId: CustomerId;  // IDで他の集約を参照
+  readonly items: readonly OrderItem[];
+  readonly status: OrderStatus;
+};
+
+// 集約ルートを通じてアイテムを追加（純粋関数）
+export const addOrderItem = (
+  order: Order,
+  item: OrderItem
+): Result<Order, DomainError> => {
+  // 整合性チェック: 注文済みの場合は追加不可
+  if (order.status === 'Confirmed') {
+    return err({
+      type: 'ORDER_ALREADY_CONFIRMED',
+      message: '確定済みの注文には追加できません',
+    });
+  }
+  // 新しい集約を返す（イミュータブル）
+  return ok({ ...order, items: [...order.items, item] });
+};
+```
+
+**悪い例:**
+```typescript
+// 集約ルートを経由せず直接変更
+export const addItemDirectly = (
+  items: OrderItem[],
+  item: OrderItem
+): OrderItem[] => {
+  items.push(item);  // ミュータブル + 整合性チェックなし
+  return items;
+};
+
+// 集約が大きすぎる
+export type Order = {
+  readonly customer: Customer;  // 集約全体を含める（IDのみにすべき）
+  readonly items: readonly {
+    product: Product;  // 集約全体を含める（IDのみにすべき）
+    quantity: number;
+  }[];
 };
 ```
 
