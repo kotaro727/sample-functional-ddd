@@ -10,6 +10,7 @@ import {
   createValidatedOrder,
 } from '@domain/order/order';
 import { Result, ok, err, isErr } from '@shared/functional/result';
+import { createMoney } from '@domain/shared/valueObjects/money';
 
 /**
  * 注文作成のエラー型
@@ -71,11 +72,20 @@ export const createOrder =
         });
       }
 
+      // 商品価格をMoney値オブジェクトに変換
+      const moneyResult = createMoney(productResult.value.price.value);
+      if (isErr(moneyResult)) {
+        return err({
+          type: 'VALIDATION_ERROR',
+          message: `商品価格の変換に失敗しました: ${moneyResult.error.message}`,
+        });
+      }
+
       // 注文明細を作成
       const orderItemResult = createOrderItem(
         item.productId,
         item.quantity,
-        productResult.value.price.value
+        moneyResult.value
       );
       if (isErr(orderItemResult)) {
         return err({

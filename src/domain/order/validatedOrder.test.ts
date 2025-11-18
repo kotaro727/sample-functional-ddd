@@ -4,6 +4,7 @@ import { createOrderItem } from './orderItem';
 import { validateShippingAddress } from './shippingAddress';
 import { validateCustomerInfo } from './customerInfo';
 import { isOk, isErr } from '@shared/functional/result';
+import { createMoney, getMoney } from '@domain/shared/valueObjects/money';
 
 describe('ValidatedOrder', () => {
   // テスト用のヘルパー
@@ -28,8 +29,15 @@ describe('ValidatedOrder', () => {
     it('有効なデータで検証済み注文を作成できる', () => {
       const shippingAddressResult = createValidShippingAddress();
       const customerInfoResult = createValidCustomerInfo();
-      const orderItem1 = createOrderItem(1, 2, 1000);
-      const orderItem2 = createOrderItem(2, 3, 500);
+
+      const money1 = createMoney(1000);
+      const money2 = createMoney(500);
+      expect(isOk(money1)).toBe(true);
+      expect(isOk(money2)).toBe(true);
+      if (!isOk(money1) || !isOk(money2)) return;
+
+      const orderItem1 = createOrderItem(1, 2, money1.value);
+      const orderItem2 = createOrderItem(2, 3, money2.value);
 
       expect(isOk(shippingAddressResult)).toBe(true);
       expect(isOk(customerInfoResult)).toBe(true);
@@ -49,7 +57,7 @@ describe('ValidatedOrder', () => {
           expect(result.value.shippingAddress._tag).toBe('ValidatedShippingAddress');
           expect(result.value.customerInfo._tag).toBe('ValidatedCustomerInfo');
           expect(result.value.shippingStatus).toBe('PENDING');
-          expect(result.value.totalAmount).toBe(3500); // (2 * 1000) + (3 * 500)
+          expect(getMoney(result.value.totalAmount)).toBe(3500); // (2 * 1000) + (3 * 500)
         }
       }
     });
@@ -79,7 +87,12 @@ describe('ValidatedOrder', () => {
     it('単一明細の合計金額を正しく計算できる', () => {
       const shippingAddressResult = createValidShippingAddress();
       const customerInfoResult = createValidCustomerInfo();
-      const orderItem = createOrderItem(1, 5, 1000);
+
+      const money = createMoney(1000);
+      expect(isOk(money)).toBe(true);
+      if (!isOk(money)) return;
+
+      const orderItem = createOrderItem(1, 5, money.value);
 
       expect(isOk(shippingAddressResult)).toBe(true);
       expect(isOk(customerInfoResult)).toBe(true);
@@ -94,7 +107,7 @@ describe('ValidatedOrder', () => {
 
         expect(isOk(result)).toBe(true);
         if (isOk(result)) {
-          expect(result.value.totalAmount).toBe(5000); // 5 * 1000
+          expect(getMoney(result.value.totalAmount)).toBe(5000); // 5 * 1000
         }
       }
     });
@@ -102,9 +115,18 @@ describe('ValidatedOrder', () => {
     it('複数明細の合計金額を正しく計算できる', () => {
       const shippingAddressResult = createValidShippingAddress();
       const customerInfoResult = createValidCustomerInfo();
-      const item1 = createOrderItem(1, 2, 1000);
-      const item2 = createOrderItem(2, 3, 500);
-      const item3 = createOrderItem(3, 1, 2000);
+
+      const money1 = createMoney(1000);
+      const money2 = createMoney(500);
+      const money3 = createMoney(2000);
+      expect(isOk(money1)).toBe(true);
+      expect(isOk(money2)).toBe(true);
+      expect(isOk(money3)).toBe(true);
+      if (!isOk(money1) || !isOk(money2) || !isOk(money3)) return;
+
+      const item1 = createOrderItem(1, 2, money1.value);
+      const item2 = createOrderItem(2, 3, money2.value);
+      const item3 = createOrderItem(3, 1, money3.value);
 
       expect(isOk(shippingAddressResult)).toBe(true);
       expect(isOk(customerInfoResult)).toBe(true);
@@ -127,18 +149,25 @@ describe('ValidatedOrder', () => {
 
         expect(isOk(result)).toBe(true);
         if (isOk(result)) {
-          expect(result.value.totalAmount).toBe(5500); // (2*1000) + (3*500) + (1*2000)
+          expect(getMoney(result.value.totalAmount)).toBe(5500); // (2*1000) + (3*500) + (1*2000)
         }
       }
     });
   });
 
   describe('calculateTotalAmount', () => {
-    it('合計金額を正しく計算できる', () => {
+    it('合計金額を正しく取得できる', () => {
       const shippingAddressResult = createValidShippingAddress();
       const customerInfoResult = createValidCustomerInfo();
-      const item1 = createOrderItem(1, 2, 1000);
-      const item2 = createOrderItem(2, 3, 500);
+
+      const money1 = createMoney(1000);
+      const money2 = createMoney(500);
+      expect(isOk(money1)).toBe(true);
+      expect(isOk(money2)).toBe(true);
+      if (!isOk(money1) || !isOk(money2)) return;
+
+      const item1 = createOrderItem(1, 2, money1.value);
+      const item2 = createOrderItem(2, 3, money2.value);
 
       if (isOk(shippingAddressResult) && isOk(customerInfoResult) && isOk(item1) && isOk(item2)) {
         const orderResult = createValidatedOrder({
@@ -150,7 +179,7 @@ describe('ValidatedOrder', () => {
         expect(isOk(orderResult)).toBe(true);
         if (isOk(orderResult)) {
           const total = calculateTotalAmount(orderResult.value);
-          expect(total).toBe(3500);
+          expect(getMoney(total)).toBe(3500);
         }
       }
     });

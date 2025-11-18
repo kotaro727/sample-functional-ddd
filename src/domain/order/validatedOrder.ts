@@ -3,6 +3,8 @@ import { ValidatedShippingAddress } from './shippingAddress';
 import { ValidatedCustomerInfo } from './customerInfo';
 import { OrderItem, calculateSubtotal } from './orderItem';
 import { ShippingStatus } from './shippingStatus';
+import { Money, addMoney, createMoney } from '@domain/shared/valueObjects/money';
+import { isOk } from '@shared/functional/result';
 
 /**
  * ValidatedOrder - 検証済み注文エンティティ
@@ -19,7 +21,7 @@ export type ValidatedOrder = {
   readonly shippingAddress: ValidatedShippingAddress;
   readonly customerInfo: ValidatedCustomerInfo;
   readonly shippingStatus: ShippingStatus;
-  readonly totalAmount: number;
+  readonly totalAmount: Money;
 };
 
 /**
@@ -34,10 +36,9 @@ export type PersistedValidatedOrder = ValidatedOrder & {
 /**
  * ValidatedOrder 作成エラー
  */
-export type ValidatedOrderCreationError = {
-  type: 'EMPTY_ORDER_ITEMS';
-  message: string;
-};
+export type ValidatedOrderCreationError =
+  | { type: 'EMPTY_ORDER_ITEMS'; message: string }
+  | { type: 'CALCULATION_ERROR'; message: string };
 
 /**
  * ValidatedOrderを作成するためのパラメータ
@@ -70,8 +71,28 @@ export const createValidatedOrder = (
     });
   }
 
-  // 合計金額を計算
-  const totalAmount = params.orderItems.reduce((sum, item) => sum + calculateSubtotal(item), 0);
+  // 合計金額を計算（0円から開始）
+  const zeroMoneyResult = createMoney(0);
+  if (!isOk(zeroMoneyResult)) {
+    return err({
+      type: 'CALCULATION_ERROR',
+      message: '初期金額の作成に失敗しました',
+    });
+  }
+
+  let totalAmount = zeroMoneyResult.value;
+
+  // 各OrderItemの小計を合計
+  for (const item of params.orderItems) {
+    const subtotalResult = calculateSubtotal(item);
+    if (!isOk(subtotalResult)) {
+      return err({
+        type: 'CALCULATION_ERROR',
+        message: subtotalResult.error.message,
+      });
+    }
+    totalAmount = addMoney(totalAmount, subtotalResult.value);
+  }
 
   return ok({
     orderItems: params.orderItems,
@@ -83,11 +104,11 @@ export const createValidatedOrder = (
 };
 
 /**
- * 注文の合計金額を計算
+ * 注文の合計金額を取得
  *
  * @param order - ValidatedOrder
- * @returns 合計金額
+ * @returns 合計金額（Money値オブジェクト）
  */
-export const calculateTotalAmount = (order: ValidatedOrder): number => {
+export const calculateTotalAmount = (order: ValidatedOrder): Money => {
   return order.totalAmount;
 };

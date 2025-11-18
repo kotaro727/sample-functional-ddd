@@ -3,6 +3,7 @@ import { createOrder } from './createOrder';
 import { OrderRepository } from '@application/ports/orderRepository';
 import { ProductRepository } from '@application/ports/productRepository';
 import { isOk, isErr } from '@shared/functional/result';
+import { getMoney } from '@domain/shared/valueObjects/money';
 
 describe('createOrder', () => {
   describe('正常系', () => {
@@ -58,7 +59,7 @@ describe('createOrder', () => {
       if (isOk(result)) {
         expect(result.value.id).toBe(1);
         expect(result.value.orderItems).toHaveLength(2);
-        expect(result.value.totalAmount).toBe(5000); // (2 * 1000) + (3 * 1000)
+        expect(getMoney(result.value.totalAmount)).toBe(5000); // (2 * 1000) + (3 * 1000)
         expect(result.value.shippingStatus).toBe('PENDING');
       }
     });
