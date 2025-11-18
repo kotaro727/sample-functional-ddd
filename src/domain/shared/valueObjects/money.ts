@@ -10,7 +10,7 @@ import { Result, ok, err } from '@shared/functional/result';
  */
 export type Money = {
   readonly _brand: 'Money';
-  readonly amount: number;
+  readonly value: number;
 };
 
 /**
@@ -47,7 +47,7 @@ export const createMoney = (amount: number): Result<Money, MoneyError> => {
 
   return ok({
     _brand: 'Money',
-    amount,
+    value: amount,
   });
 };
 
@@ -58,7 +58,7 @@ export const createMoney = (amount: number): Result<Money, MoneyError> => {
  * @returns 金額
  */
 export const getMoney = (money: Money): number => {
-  return money.amount;
+  return money.value;
 };
 
 /**
@@ -72,7 +72,7 @@ export const addMoney = (a: Money, b: Money): Money => {
   // すでに検証済みのMoneyなので、createMoneyを通さず直接作成できる
   return {
     _brand: 'Money',
-    amount: a.amount + b.amount,
+    value: a.value + b.value,
   };
 };
 
@@ -105,6 +105,6 @@ export const multiplyMoney = (
 
   return ok({
     _brand: 'Money',
-    amount: money.amount * multiplier,
+    value: money.value * multiplier,
   });
 };
