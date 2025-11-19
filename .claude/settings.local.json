@@ -12,7 +12,8 @@
       "Bash(bun test:*)",
       "Bash(bun run openapi:generate:*)",
       "Bash(~/.bun/bin/bun run openapi:generate:*)",
-      "Bash(~/.bun/bin/bun run:*)"
+      "Bash(~/.bun/bin/bun run:*)",
+      "Bash(bun run typecheck:*)"
     ],
     "deny": [],
     "ask": [

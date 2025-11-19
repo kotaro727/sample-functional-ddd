@@ -1,5 +1,6 @@
 import { OrderRepository } from '@application/ports/orderRepository';
 import { ProductRepository } from '@application/ports/productRepository';
+import { EventBus } from '@application/ports/eventBus';
 import {
   PersistedValidatedOrder,
   UnvalidatedShippingAddress,
@@ -9,6 +10,7 @@ import {
   createOrderItem,
   createValidatedOrder,
 } from '@domain/order/order';
+import { createOrderCreatedEvent } from '@domain/order/events';
 import { Result, ok, err, isErr } from '@shared/functional/result';
 import { createMoney } from '@domain/shared/valueObjects/money';
 
@@ -37,10 +39,11 @@ export type CreateOrderRequest = {
  *
  * @param orderRepository - 注文リポジトリ
  * @param productRepository - 商品リポジトリ
+ * @param eventBus - イベントバス
  * @returns 注文作成関数
  */
 export const createOrder =
-  (orderRepository: OrderRepository, productRepository: ProductRepository) =>
+  (orderRepository: OrderRepository, productRepository: ProductRepository, eventBus: EventBus) =>
   async (request: CreateOrderRequest): Promise<Result<PersistedValidatedOrder, CreateOrderError>> => {
     // 1. 配送先住所の検証
     const validatedAddressResult = validateShippingAddress(request.shippingAddress);
@@ -119,6 +122,9 @@ export const createOrder =
         message: savedOrderResult.error.message,
       });
     }
+
+    // 6. イベントを発行
+    await eventBus.publish(createOrderCreatedEvent(savedOrderResult.value));
 
     return ok(savedOrderResult.value);
   };
